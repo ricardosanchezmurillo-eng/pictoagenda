@@ -6,3 +6,5 @@ Agenda visual con pictogramas de ARASAAC, fotos propias y dictado por voz. Es un
 - El perfil personal no está en este repositorio: se importa desde la app.
 
 Pictogramas: Sergio Palao. Origen: ARASAAC (https://arasaac.org). Licencia CC BY-NC-SA. Propiedad: Gobierno de Aragón (España).
+
+Se publica automáticamente en https://pictoagendamiranda.vercel.app al subir cambios a `main`.

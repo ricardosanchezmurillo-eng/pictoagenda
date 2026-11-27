@@ -386,6 +386,7 @@ label.f{display:block;font-weight:700;margin:14px 0 5px;font-size:.92rem}
     </div>
     <div id="paneF" hidden>
       <div class="row"><button class="pri grow" id="edPick">Elegir del carrete</button><button class="grow" id="edCam">Hacer foto</button></div>
+      <button class="soft" id="edWeb" style="width:100%;margin-top:8px">Buscar foto del sitio en internet</button>
       <input type="file" id="edFile" accept="image/*" hidden>
       <input type="file" id="edCamFile" accept="image/*" capture="environment" hidden>
       <p class="hint">Mejor el sitio real (la puerta, el cartel) o la cara de la persona.</p>
@@ -823,6 +824,7 @@ function addSteps(items, replace){
   const steps = [];
   items.forEach(it => {
     const st = Object.assign({uid:uid(), done:false}, typeof it === 'string' ? {text:it} : it);
+    if (st.people){ st.people = st.people.filter(p => !/^miranda$/i.test(p)); if (!st.people.length) delete st.people; }
     if (!st.time && !st.options){ const o = splitOptions(st.text); if (o){ st.options = o; st.text = o.join(' o '); } }
     // "no hay acrobacias" con la agenda ya hecha: se tacha la que ya estaba
     if (!replace && st.cancelled){
@@ -885,7 +887,26 @@ function aiToItems(steps){
   return steps.map(s => s.type === 'time' ? {time:s.time, text:TIMES[s.time].label}
     : s.type === 'choice' ? {options:s.options.map(o => o.label), text:s.options.map(o => o.label).join(' o ')}
     : Object.assign({text:s.label}, s.picto ? {q:s.picto} : {}, s.people && s.people.length ? {people:s.people} : {},
-        s.cancelled ? {cancelled:true} : {}, s.reason ? {reason:s.reason} : {}));
+        s.cancelled ? {cancelled:true} : {}, s.reason ? {reason:s.reason} : {}, s.place ? {place:s.place} : {}));
+}
+// Sitios reales con nombre (X Madrid, Teatro Luchana…): busca una foto en internet una vez y la guarda para siempre
+async function placePhoto(place){
+  const r = await fetch('/api/place', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(place)});
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok || !j.image) return {maps: j.maps};
+  return {blob: await resizeImage(await dataURLToBlob(j.image)), maps: j.maps, source: j.source};
+}
+async function fetchPlaces(items){
+  for (const it of items){
+    if (!it.place) continue;
+    const key = keyWords(it.place.name); if (!key.length || matchChoice(S.choices, key)) continue;
+    try{
+      const p = await placePhoto(it.place); if (!p.blob) continue;
+      const pid = 'ph_' + uid(); await DB.put(pid, p.blob);
+      S.choices['c_' + uid()] = {type:'photo', photo:pid, label:it.place.name, triggers:[key], maps:p.maps, place:true};
+      save('choices'); renderSteps(); renderChoices(); toast('Foto de ' + it.place.name + ' añadida (' + p.source + ')');
+    }catch(e){}
+  }
 }
 async function planText(text){
   if (S.settings.ai !== false && navigator.onLine){
@@ -907,7 +928,7 @@ async function createFrom(text, replace){
   try{
     const {items, ai} = await planText(text);
     if (!items.length){ toast('No he encontrado pasos'); return; }
-    addSteps(items, replace);
+    addSteps(items, replace); fetchPlaces(items);
     toast((ai ? 'Entendido con IA · ' : 'Hecho sin IA · ') + (items.length === 1 ? '1 paso' : items.length + ' pasos'));
     $('#aiErr').textContent = ai ? '' : (LS.get('aiErr', '') ? 'Motivo sin IA: ' + LS.get('aiErr', '') : '');
     if (!replace) $('#txt').value = '';
@@ -1031,6 +1052,15 @@ async function onFile(e){
   try{ ED.blob = await resizeImage(f); ED.sel = {type:'photo'}; refreshPreview(); }catch(err){ toast(err.message); }
 }
 $('#edFile').onchange = onFile; $('#edCamFile').onchange = onFile;
+$('#edWeb').onclick = async () => {
+  const name = $('#edLabel').value.trim(); if (!name){ toast('Escribe el nombre del sitio'); return; }
+  const b = $('#edWeb'), old = b.textContent; b.disabled = true; b.textContent = 'Buscando…';
+  try{ const p = await placePhoto({name});
+    if (p.blob){ ED.blob = p.blob; ED.sel = {type:'photo'}; refreshPreview(); toast('Foto encontrada (' + p.source + ')'); }
+    else toast('No he encontrado foto. Prueba con el nombre completo y la ciudad.');
+    if (p.maps && !$('#edMaps').value) $('#edMaps').value = p.maps;
+  }catch(e){ toast('Sin conexión'); } finally { b.disabled = false; b.textContent = old; }
+};
 function openMaps(m){ window.open(/^https?:\/\//i.test(m) ? m : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(m), '_blank', 'noopener'); }
 $('#edMapsFind').onclick = () => { const q = $('#edMaps').value.trim() || $('#edLabel').value.trim(); if (q) openMaps(q); toast('En Maps: elige el sitio, Compartir, copia el enlace y pégalo aquí'); };
 $('#edCancel').onclick = () => { $('#ed').hidden = true; ED = null; };
@@ -1523,7 +1553,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 7.2 (27/11/2026)';
+const APP_VERSION = 'Versión 8 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';
@@ -1621,7 +1651,7 @@ function stopVoice(){
         if (r){
           setMic('idle'); $('#txt').value = r.transcript || $('#txt').value;
           const items = aiToItems(r.steps || []);
-          if (items.length){ addSteps(items, true); $('#aiErr').textContent = ''; toast('Entendido con IA · ' + (items.length === 1 ? '1 paso' : items.length + ' pasos')); }
+          if (items.length){ addSteps(items, true); fetchPlaces(items); $('#aiErr').textContent = ''; toast('Entendido con IA · ' + (items.length === 1 ? '1 paso' : items.length + ' pasos')); }
           else if (r.transcript) $('#btnCreate').click(); else toast('No te he oído bien. Prueba otra vez.');
           return;
         }

@@ -2,13 +2,17 @@
 const RULES = `Tipos de paso:
 1) Momento del día: {"type":"time","time":"hoy"|"manana_dia"|"manana"|"mediodia"|"tarde"|"noche"}
    "mañana" como día siguiente = "manana_dia"; "por la mañana" = "manana". Ponlo justo antes de las actividades de ese momento y no lo repitas.
-2) Actividad: {"type":"activity","label":"...","picto":"...","people":["..."],"cancelled":false,"reason":""}
+2) Actividad: {"type":"activity","label":"...","picto":"...","people":["..."],"cancelled":false,"reason":"","place":null}
    - label: lo más corto posible (1 a 4 palabras), en minúsculas, fácil de leer por sílabas: "cole", "desayunar", "coche", "parque", "colgar el abrigo", "viene mamá".
    - picto: cómo se llama el pictograma en ARASAAC. Para acciones con objeto: verbo habitual en infinitivo SIN "se" + artículo + sustantivo
      ("lavar las manos", "quitar los zapatos", "colgar el abrigo", "poner el pijama", "lavar los dientes", "recoger los juguetes").
      Usa el verbo más habitual: "poner el abrigo en la percha" → "colgar el abrigo"; "meter la ropa en la lavadora" → "poner la lavadora".
      Para el resto, una palabra: "colegio", "desayunar", "coche", "parque".
-   - people: personas que van con ella o hacen la actividad con ella.
+   - place: si nombran un SITIO REAL CON NOMBRE PROPIO (centro comercial, teatro, restaurante, museo, parque o tienda concretos),
+     {"name":"X Madrid","city":"Alcorcón","kind":"centro comercial"}. Entonces label = el nombre tal cual ("X Madrid", "Teatro Luchana",
+     "Twister Rock and Food") y picto = el tipo de sitio ("centro comercial", "teatro", "restaurante"). Si no saben la ciudad, déjala vacía.
+     NUNCA omitas un sitio con nombre propio: es un paso propio, antes de lo que se hace dentro ("al X Madrid a la bolera" → X Madrid, bolera).
+   - people: personas que van con ella o hacen la actividad con ella. Miranda es la niña: nunca la pongas en people.
    - Si alguien viene a buscarla o la recoge: label "viene <persona>", picto "<persona>", people [].
    - Si NO va a pasar ("no hay cole", "hoy no vamos a la piscina"): "cancelled": true y "reason" con el motivo corto si lo dicen ("Eva está enferma").
 3) Elegir: {"type":"choice","options":[{"label":"pintar","picto":"pintar"},{"label":"puzle","picto":"puzle"}]} cuando ella pueda elegir.
@@ -19,7 +23,8 @@ Reglas:
 - Mantén el orden en que se dicen las cosas. No inventes nada que no se haya dicho. Máximo 12 pasos.
 - Si una persona o un lugar coincide con los conocidos, escríbelo exactamente igual.`;
 
-const INTRO = `Eres el asistente de una agenda visual con pictogramas para una niña de 7 años con autismo que aprende a leer por sílabas.
+const INTRO = `Eres el asistente de una agenda visual con pictogramas para Miranda, una niña de 7 años con autismo que aprende a leer por sílabas.
+La familia vive en Leganés (Madrid).
 Un adulto dice en lenguaje natural lo que van a hacer. Conviértelo en una secuencia corta y clara de pasos.`;
 
 const PLAN_SYS = `${INTRO}\n\nDevuelve SOLO JSON con esta forma: {"steps":[...]}\n\n${RULES}`;
@@ -44,8 +49,9 @@ function clean(steps){
       const o = s.options.map(x => ({label: str(x && x.label, 40).toLowerCase(), picto: str(x && x.picto, 40)})).filter(x => x.label).slice(0, 3);
       if (o.length >= 2) out.push({type:'choice', options:o});
     } else if (s.type === 'activity' && str(s.label, 60)){
-      out.push({type:'activity', label: str(s.label, 60).toLowerCase(), picto: str(s.picto, 50),
-        people: Array.isArray(s.people) ? s.people.map(p => str(p, 30)).filter(Boolean).slice(0, 4) : [],
+      const pl = s.place && typeof s.place === 'object' && str(s.place.name, 80) ? {name: str(s.place.name, 80), city: str(s.place.city, 60), kind: str(s.place.kind, 40)} : null;
+      out.push({type:'activity', label: pl ? str(s.label, 60) : str(s.label, 60).toLowerCase(), picto: str(s.picto, 50), place: pl,
+        people: Array.isArray(s.people) ? s.people.map(p => str(p, 30)).filter(p => p && !/^miranda$/i.test(p)).slice(0, 4) : [],
         cancelled: !!s.cancelled, reason: str(s.reason, 80)});
     }
   }

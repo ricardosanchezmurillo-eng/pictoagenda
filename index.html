@@ -581,7 +581,7 @@ function markText(text){
   const keys = Object.keys(all).sort((a,b) => b.length - a.length);
   const det = '(?:(?:el|la|los|las|mi|mis|tu|tus|su|sus)\\s+)?';
   const nm = '(?:' + keys.map(k => RX_ESC(k).replace(/\s+/g, '\\s+')).join('|') + ')';
-  const extra = '(?:\\s+(?!(?:y|e|o|con|luego|despues|mas|por|a|al|en|de|del|la|el|los|las|para|que|hasta|antes|entonces|finalmente|tambien|un|una|hoy|mañana|tarde|noche)(?=\\s|$))[a-zñ]+)?';
+  const extra = '(?:\\s+(?!(?:y|e|o|con|luego|despues|mas|por|a|al|en|de|del|la|el|los|las|para|que|hasta|antes|entonces|finalmente|tambien|un|una|hoy|mañana|tarde|noche|ahora|ya|vas|va|vamos|vais|van|voy|ir|vienes|viene|vienen|venis|venimos|estas|esta|estamos|estan|es|son|eres|sois|somos|te|se|le|nos|os|me|lo|hace|haces|hacemos|hacer|juega|juegas|jugamos|jugar|cuando|si|pero|otra|otro)(?=\\s|$))[a-zñ]+)?';
   const one = det + nm + '(?=\\s|,|$)' + extra;
   const reP = new RegExp('(^|\\s)con\\s+(' + one + '(?:\\s*(?:,|\\sy\\s|\\se\\s)\\s*' + one + ')*)' + RX_END, 'g');
   subBoth(st, reP, m => {
@@ -1674,7 +1674,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 8.6 (27/11/2026)';
+const APP_VERSION = 'Versión 8.7 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

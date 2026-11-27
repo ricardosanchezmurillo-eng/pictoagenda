@@ -12,13 +12,17 @@ const RULES = `Tipos de paso:
      {"name":"X Madrid","city":"Alcorcón","kind":"centro comercial"}. Entonces label = el nombre tal cual ("X Madrid", "Teatro Luchana",
      "Twister Rock and Food") y picto = el tipo de sitio ("centro comercial", "teatro", "restaurante"). Si no saben la ciudad, déjala vacía.
      NUNCA omitas un sitio con nombre propio: es un paso propio, antes de lo que se hace dentro ("al X Madrid a la bolera" → X Madrid, bolera).
-   - people: personas que van con ella o hacen la actividad con ella. Miranda es la niña: nunca la pongas en people.
+   - Juegos y actividades con "a"/"con": conserva QUÉ hace, nunca dejes solo "jugar" ni "hacer" si dicen a qué.
+     "jugar a la pelota" → label "jugar a la pelota", picto "jugar a la pelota"; "jugar al escondite" → "jugar al escondite";
+     "jugar con los coches" → label "jugar con los coches", picto "coche"; "hacer un puzle" → "puzle"; "plastilina" → "plastilina".
+   - people: SOLO las personas dichas para ESE paso ("con papá a hacer cosquillas"). No las copies a los pasos siguientes si no se repiten.
+     Miranda es la niña: nunca la pongas en people.
    - Si alguien viene a buscarla o la recoge: label "viene <persona>", picto "<persona>", people [].
    - Si NO va a pasar ("no hay cole", "hoy no vamos a la piscina"): "cancelled": true y "reason" con el motivo corto si lo dicen ("Eva está enferma").
 3) Elegir: {"type":"choice","options":[{"label":"pintar","picto":"pintar"},{"label":"puzle","picto":"puzle"}]} cuando ella pueda elegir.
 
 Reglas:
-- Quita el relleno: "te voy a", "vamos a ir a", "para que", "allí", "luego", "después".
+- Quita el relleno: "ahora", "vas a", "te voy a", "vamos a ir a", "para que", "allí", "luego", "después".
 - Una frase puede dar varios pasos: "te llevo en el coche para que vayas a desayunar allí" → coche, desayunar.
 - Mantén el orden en que se dicen las cosas. No inventes nada que no se haya dicho. Máximo 12 pasos.
 - Si una persona o un lugar coincide con los conocidos, escríbelo exactamente igual.`;

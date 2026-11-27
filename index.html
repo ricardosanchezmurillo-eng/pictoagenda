@@ -1097,7 +1097,7 @@ async function showPhotos(body){
   try{
     const j = await placeApi(body);
     if (j.maps) $('#edMaps').value = j.maps;
-    if (!j.images || !j.images.length){ res.innerHTML = '<p class="hint">Sitio encontrado (ya tienes el enlace de Maps), pero sin fotos públicas. Haz una foto o elige una del carrete.</p>'; return; }
+    if (!j.images || !j.images.length){ res.innerHTML = '<p class="hint">Sitio encontrado y enlace de Maps guardado, pero no hay fotos libres de este sitio en internet. Truco: en Google Maps haz una captura de pantalla de la foto del sitio y elígela con «Elegir del carrete».</p>'; return; }
     res.innerHTML = '<p class="hint">Toca la foto que quieras:</p><div class="grid">' + j.images.map((x,i) => `<img data-i="${i}" src="${x.data}" alt="">`).join('') + '</div>';
     res.querySelectorAll('img[data-i]').forEach(im => im.onclick = async () => {
       res.querySelectorAll('img').forEach(x => x.classList.toggle('sel', x === im));
@@ -1597,7 +1597,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 8.2 (27/11/2026)';
+const APP_VERSION = 'Versión 8.3 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

@@ -144,6 +144,20 @@ label.f{display:block;font-weight:700;margin:14px 0 5px;font-size:.92rem}
 .chips{display:flex;flex-wrap:wrap;gap:6px}
 .chip{padding:8px 13px;border-radius:999px;font-weight:700;font-size:.9rem}
 .chip.on{background:var(--sky);border-color:var(--sky);color:#fff}
+.chip i{font-style:normal;opacity:.7;margin-left:4px}
+button.wide{width:100%;margin-top:10px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:10px;margin-top:12px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 6px;border-radius:18px;background:var(--paper);border:1.5px solid transparent;min-width:0}
+.tile img{width:72px;height:72px;border-radius:16px;object-fit:contain;background:#fff}
+.tile img.photo{object-fit:cover}
+.tile.person img{border-radius:50%;object-fit:cover}
+.tile .syl{font-size:.95rem;line-height:1.15;text-align:center;overflow-wrap:anywhere}
+.tile small{color:var(--mute);font-weight:400;font-size:.72rem}
+.rt{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1.5px solid var(--line)}
+.rt:last-child{border-bottom:0}
+.rt .grow .small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.star{font-size:1.3rem;padding:6px 8px;color:var(--line)}
+.star.on{color:var(--sun)}
 .sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1.5px solid var(--line)}
 .sw b{display:block}
 .sw span{color:var(--mute);font-size:.85rem}
@@ -299,12 +313,18 @@ label.f{display:block;font-weight:700;margin:14px 0 5px;font-size:.92rem}
 </div>
 
 <h2>Rutinas</h2>
-<div class="panel" id="routines"></div>
+<div class="panel">
+  <input id="routQ" type="search" placeholder="Buscar rutina…" hidden>
+  <div id="routines"></div>
+  <button class="soft wide" id="routMore" hidden></button>
+</div>
 
 <h2>Fotos y pictogramas</h2>
 <div class="panel">
   <p class="hint" style="margin-top:0">Lo que sale cuando decís una palabra. Las personas salen en pequeño cuando decís "con …".</p>
   <div class="row" style="margin-top:10px"><button class="soft" id="btnNewPerson">Añadir persona</button><button class="soft" id="btnNewChoice">Añadir lugar o cosa</button></div>
+  <input id="libQ" type="search" placeholder="Buscar: abuela, parque, cole…" style="margin-top:12px">
+  <div class="chips" id="libTabs" style="margin-top:10px"></div>
   <div id="choices"></div>
 </div>
 
@@ -1139,31 +1159,59 @@ $('#edDelete').onclick = () => {
 };
 
 /* ---------- Fotos y pictogramas guardados ---------- */
+let LIB = 'person';
+const UNNAMED = c => c.person && /^persona( \d+| tarde)?$/i.test(c.label.trim());
+function libKind(c){ return UNNAMED(c) ? 'unnamed' : c.person ? 'person' : (c.place || c.maps) ? 'place' : 'thing'; }
 function renderChoices(){
-  const box = $('#choices'); const ids = Object.keys(S.choices).filter(id => !S.choices[id].time);
-  if (!ids.length){ box.innerHTML = '<p class="hint">Todavía nada. Empieza por papá, mamá y el cole.</p>'; return; }
-  ids.sort((a,b) => (S.choices[b].person ? 1 : 0) - (S.choices[a].person ? 1 : 0) || S.choices[a].label.localeCompare(S.choices[b].label, 'es'));
-  box.innerHTML = ids.map(id => { const c = S.choices[id]; return `<div class="li" data-id="${id}">
-    <img class="thumb ${c.person ? 'round' : ''}" alt="" src="${LOAD}"><div class="grow"><div class="syl">${sylHTML(c.label)}</div>
-    <div class="small">${c.person ? 'Persona · ' : ''}se activa con: ${esc(trigText(c.triggers))}${c.maps ? ' · con mapa' : ''}</div></div>
-    <button class="soft" data-a="edit">Editar</button></div>`; }).join('');
-  box.querySelectorAll('.li').forEach(el => resolveChoice(S.choices[el.dataset.id]).then(r => setImg(el.querySelector('img'), r)));
+  const box = $('#choices'); const all = Object.keys(S.choices).filter(id => !S.choices[id].time);
+  const n = {person:0, place:0, thing:0, unnamed:0}; all.forEach(id => n[libKind(S.choices[id])]++);
+  if (!n[LIB] && LIB !== 'person') LIB = ['person','place','thing','unnamed'].find(k => n[k]) || 'person';
+  const names = {person:'Personas', place:'Sitios', thing:'Cosas', unnamed:'Sin nombre'};
+  $('#libTabs').innerHTML = Object.keys(names).filter(k => n[k] || k !== 'unnamed').map(k => `<button class="chip ${LIB===k ? 'on' : ''}" data-k="${k}">${names[k]}<i>${n[k]}</i></button>`).join('');
+  const q = stripAccents($('#libQ').value.trim().toLowerCase());
+  $('#libTabs').hidden = !!q;
+  let ids = q ? all.filter(id => { const c = S.choices[id]; return stripAccents((c.label + ' ' + trigText(c.triggers)).toLowerCase()).includes(q); })
+    : all.filter(id => libKind(S.choices[id]) === LIB);
+  ids.sort((a,b) => S.choices[a].label.localeCompare(S.choices[b].label, 'es', {numeric:true}));
+  if (!all.length){ box.innerHTML = '<p class="hint">Todavía nada. Empieza por papá, mamá y el cole.</p>'; return; }
+  if (!ids.length){ box.innerHTML = `<p class="hint">${q ? 'No hay nada con esa palabra.' : 'Nada en este grupo todavía.'}</p>`; return; }
+  const hint = LIB === 'unnamed' && !q ? '<p class="hint">Personas de vuestras fotos que aún no tienen nombre. Tócalas para ponérselo y pasarán a Personas.</p>' : '';
+  box.innerHTML = hint + '<div class="tiles">' + ids.map(id => { const c = S.choices[id]; return `<button class="tile ${c.person ? 'person' : ''}" data-id="${id}" data-a="edit">
+    <img alt="" src="${LOAD}"><span class="syl">${sylHTML(c.label)}</span>${c.maps ? '<small>con mapa</small>' : ''}</button>`; }).join('') + '</div>';
+  box.querySelectorAll('.tile').forEach(el => resolveChoice(S.choices[el.dataset.id]).then(r => setImg(el.querySelector('img'), r)));
 }
-$('#choices').addEventListener('click', e => { const b = e.target.closest('[data-a="edit"]'); if (b) openEditor({cid: b.closest('.li').dataset.id}); });
+$('#libTabs').addEventListener('click', e => { const b = e.target.closest('[data-k]'); if (b){ LIB = b.dataset.k; renderChoices(); } });
+$('#libQ').addEventListener('input', () => renderChoices());
+$('#choices').addEventListener('click', e => { const b = e.target.closest('[data-a="edit"]'); if (b) openEditor({cid: b.dataset.id}); });
 $('#btnNewPerson').onclick = () => { const p = prompt('¿Quién es? (papá, mamá, abuela Gloria, Eva…)'); if (p && p.trim()) openEditor({phrase: p.trim().toLocaleLowerCase('es'), person: true}); };
 $('#btnNewChoice').onclick = () => { const p = prompt('¿Qué lugar o cosa? (hamburguesería, piscina…)'); if (p && p.trim()) openEditor({phrase: cleanChunk(p.trim())}); };
 
 /* ---------- Rutinas ---------- */
+let ROUT_ALL = false;
 function renderRoutines(){
-  const box = $('#routines');
-  if (!S.routines.length){ box.innerHTML = '<p class="hint" style="margin:0">Guarda una agenda que se repite (mañana de cole, baño y cama) para cargarla de un toque.</p>'; return; }
-  box.innerHTML = S.routines.map((r,i) => `<div class="li"><div class="grow"><b>${esc(r.name)}</b><div class="small">${esc(r.steps.map(s=>s.text).join(' · '))}</div></div>
-    <button class="soft" data-a="load" data-i="${i}">Cargar</button><button class="ghost danger" data-a="del" data-i="${i}" aria-label="Borrar rutina">✕</button></div>`).join('');
+  const box = $('#routines'), more = $('#routMore'), qi = $('#routQ');
+  qi.hidden = S.routines.length < 6;
+  if (!S.routines.length){ box.innerHTML = '<p class="hint" style="margin:0">Guarda una agenda que se repite (mañana de cole, baño y cama) para cargarla de un toque.</p>'; more.hidden = true; return; }
+  const q = stripAccents(qi.value.trim().toLowerCase());
+  let list = S.routines.map((r,i) => ({r, i}));
+  if (q) list = list.filter(({r}) => stripAccents((r.name + ' ' + r.steps.map(s => s.text).join(' ')).toLowerCase()).includes(q));
+  list.sort((a,b) => (b.r.pin ? 1 : 0) - (a.r.pin ? 1 : 0) || (b.r.used || 0) - (a.r.used || 0) || a.r.name.localeCompare(b.r.name, 'es'));
+  const LIMIT = 4, total = list.length;
+  if (!q && !ROUT_ALL) list = list.slice(0, Math.max(LIMIT, S.routines.filter(r => r.pin).length));
+  box.innerHTML = list.map(({r,i}) => `<div class="rt"><button class="ghost star ${r.pin ? 'on' : ''}" data-a="pin" data-i="${i}" aria-label="${r.pin ? 'Quitar de favoritas' : 'Marcar como favorita'}">★</button>
+    <div class="grow"><b>${esc(r.name)}</b><div class="small">${esc(r.steps.map(s=>s.text).join(' · '))}</div></div>
+    <button class="soft" data-a="load" data-i="${i}">Cargar</button><button class="ghost danger" data-a="del" data-i="${i}" aria-label="Borrar rutina">✕</button></div>`).join('')
+    || '<p class="hint" style="margin:0">Ninguna rutina con esa palabra.</p>';
+  more.hidden = !!q || total <= LIMIT;
+  more.textContent = ROUT_ALL ? 'Ver menos' : `Ver todas (${total})`;
 }
+$('#routQ').addEventListener('input', renderRoutines);
+$('#routMore').onclick = () => { ROUT_ALL = !ROUT_ALL; renderRoutines(); };
 $('#routines').addEventListener('click', e => {
-  const b = e.target.closest('button[data-a]'); if (!b) return; const i = +b.dataset.i;
-  if (b.dataset.a==='load'){ S.agenda = S.routines[i].steps.map(s => Object.assign({}, s, {uid:uid(), done:false})); save('agenda'); renderSteps(); toast('Rutina cargada'); window.scrollTo({top:0, behavior:'smooth'}); }
-  else if (confirm(`¿Borrar la rutina "${S.routines[i].name}"?`)){ S.routines.splice(i,1); save('routines'); renderRoutines(); }
+  const b = e.target.closest('button[data-a]'); if (!b) return; const i = +b.dataset.i, r = S.routines[i];
+  if (b.dataset.a==='pin'){ r.pin = !r.pin; save('routines'); renderRoutines(); return; }
+  if (b.dataset.a==='load'){ r.used = Date.now(); save('routines'); S.agenda = r.steps.map(s => Object.assign({}, s, {uid:uid(), done:false})); save('agenda'); renderSteps(); renderRoutines(); toast('Rutina cargada'); window.scrollTo({top:0, behavior:'smooth'}); }
+  else if (confirm(`¿Borrar la rutina "${r.name}"?`)){ S.routines.splice(i,1); save('routines'); renderRoutines(); }
 });
 $('#btnSaveRoutine').onclick = () => {
   if (!S.agenda.length){ toast('La agenda está vacía'); return; }
@@ -1597,7 +1645,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 8.3 (27/11/2026)';
+const APP_VERSION = 'Versión 8.4 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

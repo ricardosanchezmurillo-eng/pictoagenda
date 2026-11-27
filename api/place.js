@@ -111,23 +111,83 @@ async function fromMapsUrl(u){
   }
   return found;
 }
+// Openverse: fotos con licencia libre (Flickr, Wikimedia…), sin clave.
+async function openverse(name, city){
+  const j = await json(`https://api.openverse.org/v1/images/?q=${encodeURIComponent([name, city].filter(Boolean).join(' '))}&page_size=10&mature=false`);
+  const ws = words(name);
+  return ((j && j.results) || []).filter(x => ws.length && norm(x.title + ' ' + (x.tags || []).map(t => t.name).join(' ')).includes(ws[0]))
+    .slice(0, 4).map(x => x.thumbnail || x.url).filter(Boolean);
+}
+// Búsqueda web con el AI Gateway (Exa y, si falla, Perplexity): páginas sobre el sitio y sus fotos de portada.
+const SKIP = /(google\.|goo\.gl|facebook\.|fb\.com|instagram\.|tripadvisor\.|tiktok\.|x\.com|twitter\.)/i;
+const BADIMG = /(logo|icon|favicon|sprite|avatar|placeholder|banner-ad|pixel|\.svg)/i;
+function walk(o, out){
+  if (!o || typeof o !== 'object') return out;
+  if (Array.isArray(o)){ o.forEach(x => walk(x, out)); return out; }
+  if (typeof o.url === 'string' && /^https?:/.test(o.url)) out.push({ url: o.url, title: String(o.title || ''), image: typeof o.image === 'string' ? o.image : '',
+    images: ((o.extras && o.extras.imageLinks) || o.imageLinks || []).filter(x => typeof x === 'string') });
+  Object.keys(o).forEach(k => { if (o[k] && typeof o[k] === 'object') walk(o[k], out); });
+  return out;
+}
+async function webImages(req, name, city, many){
+  const a = auth(req); if (!a) return [];
+  let found = [];
+  try {
+    const { generateText } = await import('ai');
+    const { createGateway } = await import('@ai-sdk/gateway');
+    const gw = createGateway({ apiKey: a.token, headers: { 'ai-gateway-auth-method': a.method } });
+    const q = [name, city].filter(Boolean).join(' ');
+    const tries = [
+      ['exa_search', () => gw.tools.exaSearch({ numResults: 8, userLocation: 'ES', contents: { extras: { imageLinks: 4 } } })],
+      ['perplexity_search', () => gw.tools.perplexitySearch({ maxResults: 8, country: 'ES', maxTokensPerPage: 256 })]
+    ];
+    for (const [tname, make] of tries){
+      for (const model of ['openai/gpt-5.4-nano', 'google/gemini-2.5-flash-lite']){
+        try {
+          const r = await generateText({ model: gw(model), maxRetries: 0, abortSignal: AbortSignal.timeout(12000), maxOutputTokens: 200,
+            tools: { [tname]: make() }, toolChoice: { type: 'tool', toolName: tname },
+            prompt: `Busca en la web el sitio "${q}" (España): su web oficial y páginas con fotos del local. Usa la herramienta con esa búsqueda.` });
+          const parts = [].concat(r.toolResults || [], ...((r.steps || []).map(st => st.toolResults || [])));
+          found = walk(parts.map(t => t.output || t.result), []);
+          if (found.length) break;
+        } catch (e) {}
+      }
+      if (found.length) break;
+    }
+  } catch (e) { return []; }
+  const ws = words(name);
+  const rel = found.filter(x => !SKIP.test(x.url) && ws.length && norm(x.title + ' ' + x.url.replace(/[-_./]/g, ' ')).includes(ws[0]));
+  const urls = [];
+  rel.forEach(x => [x.image].concat(x.images).forEach(u => { if (u && /^https?:/.test(u) && !BADIMG.test(u) && !urls.includes(u)) urls.push(u); }));
+  const noImg = rel.filter(x => !x.image).slice(0, many ? 4 : 2);
+  (await Promise.all(noImg.map(x => ogImage(x.url)))).forEach(u => { if (u && !BADIMG.test(u) && !urls.includes(u)) urls.push(u); });
+  return urls.slice(0, many ? 8 : 3);
+}
 async function photos(req, p, many){
   const urls = [];
   const add = u => { if (u && !urls.includes(u)) urls.push(u); };
   add(p.image);
-  if (p.wikidata) add(await wikidataImage(p.wikidata));
+  const [wd, near, wp, ov] = await Promise.all([
+    p.wikidata ? wikidataImage(p.wikidata) : null,
+    p.lat && p.lon ? commonsNear(p.lat, p.lon, p.name, !many) : [],
+    wikipedia(p.name, p.city),
+    many ? openverse(p.name, p.city) : []
+  ]);
+  add(wd);
   let website = p.website || null;
   if (website) add(await ogImage(website));
-  if (p.lat && p.lon) (await commonsNear(p.lat, p.lon, p.name, !many)).forEach(add);
-  add(await wikipedia(p.name, p.city));
-  if (urls.length < 2){ website = website || await aiWebsite(req, p.name, p.city); if (website) add(await ogImage(website)); }
+  near.forEach(add); add(wp);
+  if (urls.length < (many ? 4 : 1)) (await webImages(req, p.name, p.city, many)).forEach(add);
+  ov.forEach(add);
+  if (!urls.length){ website = website || await aiWebsite(req, p.name, p.city); if (website) add(await ogImage(website)); }
+  const want = many ? 8 : 1;
+  const datas = await Promise.all(urls.slice(0, many ? 14 : 4).map(u => imageData(u, many ? 700000 : 2500000)));
   const out = []; let total = 0;
-  for (const u of urls){
-    if (out.length >= (many ? 6 : 1)) break;
-    const d = await imageData(u, many ? 900000 : 2500000); if (!d) continue;
-    if (total + d.length > 3800000) break; total += d.length;
-    out.push({ data: d, source: /wikimedia|wikipedia|wikidata/.test(u) ? 'Wikimedia' : /openstreetmap/.test(u) ? 'OpenStreetMap' : 'web del sitio' });
-  }
+  datas.forEach((d, i) => {
+    if (!d || out.length >= want || total + d.length > 4200000) return; total += d.length;
+    const u = urls[i];
+    out.push({ data: d, source: /wikimedia|wikipedia|wikidata/.test(u) ? 'Wikimedia' : /openstreetmap/.test(u) ? 'OpenStreetMap' : /openverse|staticflickr|flickr/.test(u) ? 'Flickr' : 'web' });
+  });
   const maps = p.lat && p.lon ? `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`
     : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent([p.name, p.city].filter(Boolean).join(', '))}`;
   return { images: out, maps, website };

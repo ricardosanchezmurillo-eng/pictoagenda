@@ -4,288 +4,443 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>PictoAgenda</title>
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#3D7BE0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="PictoAgenda">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Atkinson+Hyperlegible:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#f4f6fb;--card:#fff;--ink:#1d2433;--mute:#6b7280;--line:#e5e7eb;--pri:#2563eb;--ok:#16a34a;--bad:#dc2626;--s0:#1d4ed8;--s1:#dc2626;--r:16px}
+:root{
+  --ink:#1F2A44; --paper:#F3F7FB; --card:#FFFFFF; --line:#DCE3EE; --mute:#66708A;
+  --sky:#3D7BE0; --sky-2:#E3EDFC; --sun:#FFC53D; --sun-2:#FFF4D6; --leaf:#2FA36B; --leaf-2:#E1F5EA;
+  --coral:#E5484D; --coral-2:#FDECEC; --lilac:#8E7CE6;
+  --s0:#2F6FDB; --s1:#E5484D;
+  --ui:"Atkinson Hyperlegible", ui-rounded, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --kid:"Andika", "Atkinson Hyperlegible", ui-rounded, system-ui, sans-serif;
+}
 [hidden]{display:none!important}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
-body{padding:calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 90px)}
-h1{font-size:1.35rem;margin:4px 0 12px;display:flex;align-items:center;gap:8px}
-h2{font-size:1.05rem;margin:22px 0 8px}
-button{font:inherit;border:0;border-radius:12px;background:#e8edf7;color:var(--ink);padding:10px 14px;cursor:pointer}
-button.pri{background:var(--pri);color:#fff;font-weight:600}
-button.ok{background:var(--ok);color:#fff;font-weight:600}
-button.ghost{background:transparent;padding:8px}
-button:disabled{opacity:.5}
-input,textarea{font:inherit;width:100%;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;color:var(--ink)}
-textarea{min-height:76px;resize:vertical}
-.card{background:var(--card);border-radius:var(--r);padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.06);margin-bottom:12px}
+html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.45 var(--ui)}
+body{padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 104px);max-width:720px;margin:0 auto}
+:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+button{font:inherit;font-weight:700;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:11px 15px;cursor:pointer}
+button:active{transform:translateY(1px)}
+button.pri{background:var(--sky);border-color:var(--sky);color:#fff}
+button.go{background:var(--leaf);border-color:var(--leaf);color:#fff}
+button.soft{background:var(--sky-2);border-color:transparent}
+button.ghost{background:transparent;border-color:transparent}
+button.danger{color:var(--coral)}
+button:disabled{opacity:.45}
+input,textarea,select{font:inherit;width:100%;border:1.5px solid var(--line);border-radius:14px;padding:11px 13px;background:#fff;color:var(--ink)}
+textarea{min-height:84px;resize:vertical}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.grow{flex:1}
-.hint{color:var(--mute);font-size:.85rem;margin:6px 0 0}
-#mic{width:72px;height:72px;border-radius:50%;font-size:2rem;background:var(--pri);color:#fff;flex:none;touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
-#mic.rec{background:var(--bad);animation:pulse 1s infinite}
-@keyframes pulse{50%{transform:scale(1.08)}}
-.syl .w{white-space:nowrap;display:inline-block}
-.syl .s{font-weight:800;letter-spacing:.02em;border-radius:.2em;padding:0 .04em;transition:background .15s}
-.syl .s0{color:var(--s0)}.syl .s1{color:var(--s1)}
-.syl .s.on{background:#fde68a}
-.syl .d{color:#9ca3af;font-weight:400}
+.grow{flex:1;min-width:0}
+.hint{color:var(--mute);font-size:.88rem;margin:6px 0 0}
+h2{font-size:1.15rem;margin:30px 0 10px}
+.panel{background:var(--card);border-radius:24px;padding:16px;border:1.5px solid var(--line)}
+
+/* Cabecera: la fecha de hoy, en la letra de Miranda */
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:14px}
+.today{font-family:var(--kid);font-weight:700;font-size:clamp(1.7rem,7vw,2.3rem);line-height:1.05;margin:0}
+.today small{display:block;font-family:var(--ui);font-weight:400;font-size:.95rem;color:var(--mute);margin-top:4px}
+.brand{display:flex;align-items:center;gap:6px;color:var(--mute);font-size:.85rem;white-space:nowrap}
+.brand img{width:26px;height:26px;border-radius:7px}
+#syncDot{width:9px;height:9px;border-radius:50%;background:var(--line);display:inline-block}
+#syncDot.ok{background:var(--leaf)} #syncDot.err{background:var(--coral)} #syncDot.busy{background:var(--sun)}
+
+/* Dictado */
+.compose{background:var(--sky-2);border-radius:28px;padding:16px}
+.compose .row:first-child{align-items:stretch;flex-wrap:nowrap}
+#mic{width:84px;height:84px;border-radius:50%;flex:none;background:var(--sky);border:0;color:#fff;display:grid;place-items:center;padding:0;
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;box-shadow:0 6px 18px rgba(61,123,224,.35)}
+#mic svg{width:38px;height:38px;pointer-events:none}
+#mic.rec{background:var(--coral);box-shadow:0 0 0 8px rgba(229,72,77,.18),0 0 0 16px rgba(229,72,77,.08)}
+#mic.busy{background:var(--mute)}
+#txt{border-color:transparent;min-height:84px}
+.compose .acts{margin-top:10px}
+.compose .acts button.pri{flex:2}
+
+/* Agenda: línea de tiempo */
 #steps{list-style:none;margin:0;padding:0}
-.step{display:flex;align-items:center;gap:10px;background:#fff;border-radius:var(--r);padding:8px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
-.step.done{opacity:.45}
-.step .num{width:34px;height:34px;border-radius:50%;background:#e8edf7;display:grid;place-items:center;font-weight:700;flex:none}
-.step.done .num{background:var(--ok);color:#fff}
-.thumb{width:72px;height:72px;border-radius:12px;object-fit:contain;background:#f8fafc;flex:none}
+.step{position:relative;display:grid;grid-template-columns:38px 76px minmax(0,1fr);gap:12px;align-items:center;
+  background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:10px 12px;margin-bottom:12px;cursor:pointer}
+.step:not(:last-child)::after{content:"";position:absolute;left:29px;bottom:-14px;width:3px;height:14px;background:var(--line)}
+.num{width:34px;height:34px;border-radius:50%;border:2.5px solid var(--sky);display:grid;place-items:center;font-weight:700;background:#fff;color:var(--sky);padding:0;font-size:.95rem}
+.step.done{opacity:.55}
+.step.done .num{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.pic{position:relative;width:76px;height:76px}
+.thumb{width:76px;height:76px;border-radius:16px;object-fit:contain;background:#fff;display:block}
 .thumb.photo{object-fit:cover}
-.step .lbl{flex:1;min-width:0;font-size:1rem;overflow:hidden}
-.step .syl .w{white-space:nowrap}
-.step .src{font-size:.72rem;color:var(--mute)}
-.acts{display:flex;flex-direction:column;gap:4px}
-.acts button{padding:6px 9px;font-size:.95rem}
-.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 12px calc(env(safe-area-inset-bottom) + 10px);background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:flex;gap:8px;z-index:5}
-.bar button{flex:1;padding:14px}
-details summary{cursor:pointer;font-weight:600;padding:6px 0}
-.list-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
-.list-item:last-child{border-bottom:0}
-.list-item .thumb{width:52px;height:52px}
-.small{font-size:.85rem}
-.toggle{display:flex;align-items:center;gap:10px;padding:6px 0}
-.toggle input{width:22px;height:22px}
-#toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);background:#111827;color:#fff;padding:10px 16px;border-radius:12px;font-size:.92rem;z-index:50;max-width:90vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}
-#toast.show{opacity:1}
-/* Editor */
-.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end}
-.sheet[hidden]{display:none}
-.sheet .in{background:#fff;width:100%;max-height:92vh;overflow:auto;border-radius:20px 20px 0 0;padding:16px 14px calc(env(safe-area-inset-bottom) + 16px)}
-.prev{display:flex;align-items:center;gap:12px;margin-bottom:10px}
-.prev img{width:96px;height:96px}
-.tabs{display:flex;gap:6px;margin:10px 0}
-.tabs button{flex:1}
-.tabs button.on{background:var(--pri);color:#fff}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:8px}
-.grid img{width:100%;aspect-ratio:1;object-fit:contain;background:#f8fafc;border-radius:12px;border:3px solid transparent}
-.grid img.sel{border-color:var(--pri)}
-label.f{display:block;font-weight:600;margin:12px 0 4px;font-size:.92rem}
-/* Modo niña */
-#kid{position:fixed;inset:0;background:#fff;z-index:30;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;padding:calc(env(safe-area-inset-top) + 8px) 12px calc(env(safe-area-inset-bottom) + 12px)}
-#kid[hidden]{display:none}
-#kidTop{display:flex;align-items:center;gap:8px}
-#kidStrip{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;padding:4px 0}
-#kidStrip .mini{position:relative;flex:none;width:52px;height:52px;border-radius:10px;border:3px solid transparent;background:#f8fafc;overflow:hidden}
-#kidStrip .mini img{width:100%;height:100%;object-fit:contain}
-#kidStrip .mini img.photo{object-fit:cover}
-#kidStrip .mini.cur{border-color:var(--pri)}
-#kidStrip .mini.done::after{content:"✓";position:absolute;inset:0;background:rgba(22,163,74,.7);color:#fff;display:grid;place-items:center;font-size:1.6rem;font-weight:800}
-#kidLock{background:#f3f4f6;width:44px;height:44px;border-radius:50%;padding:0;font-size:1.2rem;flex:none;position:relative}
-#kidLock.hold{background:#fde68a}
-#kidMain{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:0}
-#kidImg{max-width:100%;max-height:52vh;width:auto;object-fit:contain;border-radius:24px}
-#kidImg.photo{object-fit:cover;max-height:50vh}
-#kidWord{font-size:clamp(2.2rem,10vw,4.8rem);text-align:center;line-height:1.15;cursor:pointer}
-#kidBottom{display:flex;align-items:center;justify-content:space-between;gap:12px}
-#kidNext{display:flex;align-items:center;gap:6px;opacity:.85;min-width:0}
-#kidNext img{width:84px;height:84px;object-fit:contain;border-radius:14px;background:#f8fafc}
-#kidNext img.photo{object-fit:cover}
-#kidNext .arrow{font-size:2rem;color:var(--mute)}
-#kidDone{width:120px;height:120px;border-radius:50%;background:var(--ok);color:#fff;font-size:4rem;font-weight:800;flex:none;box-shadow:0 6px 18px rgba(22,163,74,.35)}
-#kidDone:active{transform:scale(.94)}
-#kidParty{position:absolute;inset:0;display:grid;place-items:center;font-size:6rem;background:rgba(255,255,255,.92);z-index:2}
-#kidParty[hidden]{display:none}
-#kidParty span{animation:pop .6s ease-out infinite alternate}
-@keyframes pop{from{transform:scale(.8)}to{transform:scale(1.15)}}
-.star{position:fixed;font-size:3rem;pointer-events:none;z-index:40;animation:fly 0.9s ease-out forwards}
-@keyframes fly{to{transform:translateY(-40vh) scale(1.6);opacity:0}}
-footer{color:var(--mute);font-size:.72rem;margin-top:24px}
-.pic{position:relative;flex:none}
-.ppl{position:absolute;right:-6px;bottom:-6px;display:flex}
-.ppl img{width:32px;height:32px;border-radius:50%;border:2px solid #fff;background:#fff;object-fit:contain;margin-left:-10px;box-shadow:0 1px 4px rgba(0,0,0,.3)}
-.ppl img.photo{object-fit:cover}
-.step.tstep{background:#fffbeb;border-left:6px solid #f59e0b}
-#kidPic{position:relative;display:inline-block;max-width:100%}
-#kidPic .ppl{right:-10px;bottom:-10px}
-#kidPic .ppl img{width:min(24vw,104px);height:min(24vw,104px);border-width:4px;margin-left:-18px}
-#kidMain.tmode{background:#fffbeb;border-radius:24px}
-.chips{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 6px}
-.chip{padding:6px 10px;border-radius:999px;background:#eef2ff;font-size:.85rem}
-.chip.on{background:var(--pri);color:#fff}
-.badge{display:inline-block;background:#fde68a;color:#78350f;border-radius:8px;padding:1px 6px;font-size:.72rem;font-weight:700}
-.duo{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:72px;height:72px;flex:none}
-.duo img{width:100%;height:100%;object-fit:contain;background:#f8fafc;border-radius:8px}
+.duo{display:grid;grid-template-columns:1fr 1fr;gap:3px;width:76px;height:76px}
+.duo img{width:100%;height:100%;object-fit:contain;border-radius:10px;background:var(--paper)}
 .duo img.photo{object-fit:cover}
-.notes{margin:0;padding-left:18px}.notes li{margin:6px 0}
-/* niña v2 */
-#kidChange{display:flex;align-items:center;gap:10px;background:#fde68a;border-radius:16px;padding:6px 14px;font-size:clamp(1.4rem,6vw,2.4rem)}
-#kidChange img{width:60px;height:60px;object-fit:contain}
-#kidOpts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:100%}
-.opt{min-width:0;background:#f8fafc;border-radius:20px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;border:4px solid #e5e7eb}
-.opt img{width:100%;max-height:34vh;object-fit:contain;border-radius:14px}
+.ppl{position:absolute;right:-8px;bottom:-8px;display:flex}
+.ppl img{width:32px;height:32px;border-radius:50%;border:2.5px solid #fff;background:#fff;object-fit:contain;margin-left:-11px;box-shadow:0 1px 4px rgba(31,42,68,.25)}
+.ppl img.photo{object-fit:cover}
+.lbl{min-width:0}
+.syl .w{white-space:nowrap;display:inline-block}
+.syl .s{font-family:var(--kid);font-weight:700;border-radius:.2em;padding:0 .03em;transition:background .15s}
+.syl .s0{color:var(--s0)} .syl .s1{color:var(--s1)}
+.syl .s.on{background:var(--sun)}
+.syl .d{color:#A3ACBF;font-weight:400}
+.step .syl{font-size:1.12rem;line-height:1.2}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;font-size:.8rem;color:var(--mute)}
+.tag{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 9px;background:var(--paper)}
+.tag.time{background:var(--sky-2);color:#24539F}
+.tag.chg{background:var(--sun);color:#5B4300}
+.tag.why{background:var(--coral-2);color:#9E2328}
+/* Capítulos del día */
+.step.tstep{background:var(--sun-2);border-color:#F3D98B}
+.step.tstep .num{border-color:var(--sun);background:var(--sun);color:var(--ink);font-size:1.05rem}
+/* Tachado */
+.step.cancel .thumb,.step.cancel .duo{filter:grayscale(1);opacity:.6}
+.step.cancel .pic::before{content:"";position:absolute;inset:6px;z-index:1;
+  background:linear-gradient(45deg,transparent 46%,var(--coral) 46%,var(--coral) 54%,transparent 54%),linear-gradient(-45deg,transparent 46%,var(--coral) 46%,var(--coral) 54%,transparent 54%)}
+.step.cancel .syl{text-decoration:line-through;text-decoration-color:var(--coral);text-decoration-thickness:3px}
+.empty{border:2px dashed var(--line);border-radius:20px;padding:18px;text-align:center;color:var(--mute)}
+.addrow{margin-top:4px}
+
+/* Barra inferior */
+.bar{position:fixed;left:0;right:0;bottom:0;padding:10px 16px calc(env(safe-area-inset-bottom) + 12px);background:linear-gradient(to top,var(--paper) 70%,rgba(243,247,251,0));z-index:5;display:flex;justify-content:center}
+.bar button{width:100%;max-width:688px;padding:16px;font-size:1.1rem;border-radius:18px;box-shadow:0 8px 20px rgba(47,163,107,.3)}
+
+/* Herramientas */
+.tools{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tool{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;padding:14px;border-radius:20px}
+.tool img{width:54px;height:54px;object-fit:contain}
+.tool span{font-weight:400;color:var(--mute);font-size:.85rem}
+
+/* Listas */
+.li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1.5px solid var(--line)}
+.li:last-child{border-bottom:0}
+.li .thumb{width:52px;height:52px;border-radius:12px}
+.li .thumb.round{border-radius:50%}
+.small{font-size:.85rem;color:var(--mute)}
+.toggle{display:flex;align-items:center;gap:12px;padding:8px 0}
+.toggle input{width:24px;height:24px;flex:none;accent-color:var(--sky)}
+.notes{margin:0;padding-left:20px}.notes li{margin:8px 0}
+footer{color:var(--mute);font-size:.75rem;margin-top:28px;line-height:1.5}
+#toast{position:fixed;left:50%;bottom:112px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:11px 17px;border-radius:14px;font-size:.92rem;z-index:60;max-width:90vw;text-align:center;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+
+/* Hojas (editar) */
+.sheet{position:fixed;inset:0;background:rgba(31,42,68,.45);z-index:20;display:flex;align-items:flex-end}
+.sheet .in{background:#fff;width:100%;max-width:720px;margin:0 auto;max-height:92vh;overflow:auto;border-radius:26px 26px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px)}
+.sheet h3{margin:0 0 4px;font-size:1.1rem}
+.prev{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.prev img{width:96px;height:96px;border-radius:18px}
+.tabs{display:flex;gap:6px;margin:12px 0}
+.tabs button{flex:1}
+.tabs button.on{background:var(--sky);border-color:var(--sky);color:#fff}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:8px}
+.grid img{width:100%;aspect-ratio:1;object-fit:contain;background:var(--paper);border-radius:14px;border:3px solid transparent}
+.grid img.sel{border-color:var(--sky)}
+label.f{display:block;font-weight:700;margin:14px 0 5px;font-size:.92rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:8px 13px;border-radius:999px;font-weight:700;font-size:.9rem}
+.chip.on{background:var(--sky);border-color:var(--sky);color:#fff}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1.5px solid var(--line)}
+.sw b{display:block}
+.sw span{color:var(--mute);font-size:.85rem}
+.sw input[type=checkbox]{width:26px;height:26px;flex:none;accent-color:var(--coral)}
+
+/* ===== Pantalla de Miranda ===== */
+#kid{position:fixed;inset:0;z-index:30;background:var(--paper);display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;
+  padding:calc(env(safe-area-inset-top) + 10px) 14px calc(env(safe-area-inset-bottom) + 14px)}
+#kTop{display:flex;align-items:center;gap:8px}
+#kStrip{display:flex;gap:6px;overflow-x:auto;flex:1;min-width:0;padding:4px 2px;scrollbar-width:none}
+.mini{position:relative;flex:none;width:50px;height:50px;border-radius:12px;border:3px solid transparent;background:#fff;overflow:hidden;padding:0}
+.mini img{width:100%;height:100%;object-fit:contain}
+.mini img.photo{object-fit:cover}
+.mini.cur{border-color:var(--sky)}
+.mini.done{opacity:.35}
+.mini.cancel img{filter:grayscale(1)}
+.mini.cancel::after{content:"";position:absolute;inset:4px;background:linear-gradient(45deg,transparent 45%,var(--coral) 45%,var(--coral) 55%,transparent 55%)}
+.mini.t{background:var(--sun-2)}
+.round{width:46px;height:46px;border-radius:50%;padding:0;display:grid;place-items:center;flex:none;font-size:1.25rem}
+#kLock.hold{background:var(--sun)}
+#kMain{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:0;border-radius:32px;padding:8px}
+#kMain.t{background:var(--sun-2)}
+.kcard{position:relative;display:inline-block;max-width:100%}
+.kcard>img{display:block;max-width:100%;max-height:46vh;object-fit:contain;border-radius:28px;background:#fff}
+.kcard>img.photo{object-fit:cover}
+.kcard.cancel>img{filter:grayscale(1);opacity:.55}
+.kcard.cancel::before{content:"";position:absolute;inset:4%;z-index:2;
+  background:linear-gradient(45deg,transparent 46.5%,var(--coral) 46.5%,var(--coral) 53.5%,transparent 53.5%),linear-gradient(-45deg,transparent 46.5%,var(--coral) 46.5%,var(--coral) 53.5%,transparent 53.5%)}
+.kcard .ppl{right:-12px;bottom:-12px;z-index:3}
+.kcard .ppl img{width:min(24vw,104px);height:min(24vw,104px);border-width:5px;margin-left:-20px}
+.kword{font-family:var(--kid);font-size:clamp(2.4rem,11vw,5rem);line-height:1.1;text-align:center;cursor:pointer}
+.kword.cancel{text-decoration:line-through;text-decoration-color:var(--coral);text-decoration-thickness:6px}
+.why{display:flex;align-items:center;gap:10px;background:#fff;border-radius:20px;padding:8px 14px}
+.why img{width:72px;height:72px;object-fit:contain;border-radius:14px}
+.why img.photo{object-fit:cover;border-radius:50%}
+.why .syl{font-size:1.6rem}
+#kChange{display:flex;align-items:center;gap:10px;background:var(--sun);border-radius:18px;padding:6px 16px}
+#kChange img{width:56px;height:56px;object-fit:contain}
+#kChange .syl{font-size:2rem}
+.subs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.sub{width:70px;height:70px;border-radius:16px;padding:4px;background:#fff;position:relative}
+.sub img{width:100%;height:100%;object-fit:contain}
+.sub.ok{opacity:.35}
+.sub.ok::after{content:"";position:absolute;inset:0;border-radius:16px;border:4px solid var(--leaf)}
+.ring{position:absolute;top:-14px;right:-14px;z-index:4;width:96px;height:96px;padding:0;border:0;background:transparent}
+.ring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.ring .bg{fill:#fff;stroke:var(--line);stroke-width:10}
+.ring .fg{fill:none;stroke:var(--sky);stroke-width:10;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.ring.end .fg{stroke:var(--sun)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-size:1.25rem}
+/* Primero-luego */
+.ft{display:grid;grid-template-columns:minmax(0,1.25fr) auto minmax(0,1fr);align-items:center;gap:10px;width:100%}
+.ft .col{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.ft .col .kcard>img{max-height:34vh}
+.ft .col.then{opacity:.75}
+.ft .col.then .kcard>img{max-height:24vh}
+.ft .kword{font-size:clamp(1.6rem,7vw,3rem)}
+.ft .arrow{width:38px;height:38px;color:var(--mute)}
+/* Lista */
+.klist{width:100%;max-width:560px;overflow:auto;max-height:100%;display:flex;flex-direction:column;gap:10px;padding:4px}
+.krow{display:flex;align-items:center;gap:14px;background:#fff;border-radius:20px;padding:10px;border:3px solid transparent}
+.krow img{width:70px;height:70px;object-fit:contain;border-radius:14px;flex:none}
+.krow img.photo{object-fit:cover}
+.krow .syl{font-size:1.6rem}
+.krow.cur{border-color:var(--sky)}
+.krow.done{opacity:.35}
+.krow.t{background:var(--sun-2)}
+.krow.cancel .syl{text-decoration:line-through;text-decoration-color:var(--coral);text-decoration-thickness:4px}
+.krow.cancel img{filter:grayscale(1)}
+/* Elegir */
+#kOpts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;width:100%}
+.opt{min-width:0;background:#fff;border-radius:24px;padding:10px;display:flex;flex-direction:column;align-items:center;gap:6px;border:4px solid var(--line)}
+.opt img{width:100%;max-height:34vh;object-fit:contain;border-radius:16px}
 .opt img.photo{object-fit:cover}
 .opt .syl{font-size:clamp(1.4rem,6vw,2.6rem)}
+.opt.on{border-color:var(--leaf)}
+/* Flechas */
+#kNav{display:flex;align-items:center;justify-content:space-between;gap:14px;padding-top:6px}
+.arw{border:0;border-radius:50%;display:grid;place-items:center;padding:0}
+.arw svg{width:48%;height:48%}
+#kPrev{width:76px;height:76px;background:#fff;color:var(--mute);border:2px solid var(--line)}
+#kNext{width:124px;height:124px;background:var(--leaf);color:#fff;box-shadow:0 10px 24px rgba(47,163,107,.35)}
+#kNext:disabled{background:#B9C3D3;box-shadow:none}
+#kPeek{display:flex;align-items:center;gap:8px;min-width:0;flex:1;justify-content:center;opacity:.8}
+#kPeek img{width:72px;height:72px;object-fit:contain;border-radius:16px;background:#fff}
+#kPeek img.photo{object-fit:cover}
+/* Tableros: esperar y sentimientos */
+#board{position:absolute;inset:0;z-index:5;background:var(--paper);display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+  padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 16px)}
+#bHead{display:flex;align-items:center;justify-content:center;gap:12px}
+#bHead img{width:88px;height:88px;object-fit:contain;border-radius:18px;background:#fff}
+#bHead img.photo{object-fit:cover}
+#bHead .syl{font-size:clamp(1.8rem,8vw,3.2rem)}
+#bBody{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:0}
+.bigring{position:relative;width:min(56vw,240px);height:min(56vw,240px)}
+.bigring svg{width:100%;height:100%;transform:rotate(-90deg)}
+.bigring .bg{fill:#fff;stroke:var(--line);stroke-width:12}
+.bigring .fg{fill:none;stroke:var(--sky);stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 1s linear}
+.bigring.end .fg{stroke:var(--sun)}
+.bigring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--kid);font-size:2.6rem}
+.bgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;width:100%;max-width:520px}
+.bgrid .opt img{max-height:15vh}
+.bgrid .opt .syl{font-size:1.1rem}
+.scale{display:flex;align-items:flex-end;gap:14px}
+.scale button{border-radius:50%;padding:0;background:#fff;border:4px solid var(--line)}
+.scale button.on{border-color:var(--coral);background:var(--coral-2)}
+#bNav{display:flex;justify-content:flex-start}
+#kParty{position:absolute;inset:0;display:grid;place-items:center;background:rgba(243,247,251,.94);z-index:6}
+#kParty div{font-size:6rem;animation:pop .7s ease-out infinite alternate}
+@keyframes pop{from{transform:scale(.85)}to{transform:scale(1.1)}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<h1>🗓️ PictoAgenda</h1>
+<header>
+  <h1 class="today" id="today">Hoy<small>Agenda de Miranda</small></h1>
+  <div class="brand"><span id="syncDot" title="Sincronización"></span><img src="icon-192.png" alt="">PictoAgenda</div>
+</header>
 
-<div class="card">
+<section class="compose" aria-label="Dictar la agenda">
   <div class="row">
-    <button id="mic" aria-label="Hablar">🎤</button>
-    <div class="grow">
-      <textarea id="txt" placeholder="Ej.: Primero vamos al cole, luego al restaurante de la hamburguesa y después al parque"></textarea>
-    </div>
+    <button id="mic" aria-label="Mantén pulsado para hablar">
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 15a3.5 3.5 0 0 0 3.5-3.5v-6a3.5 3.5 0 1 0-7 0v6A3.5 3.5 0 0 0 12 15Zm6-3.6a1 1 0 1 0-2 0 4 4 0 0 1-8 0 1 1 0 1 0-2 0 6 6 0 0 0 5 5.9V20H9a1 1 0 1 0 0 2h6a1 1 0 1 0 0-2h-2v-2.7a6 6 0 0 0 5-5.9Z"/></svg>
+    </button>
+    <textarea id="txt" class="grow" placeholder="Mañana desayunamos churros con papá y mamá, luego cole y por la tarde parque"></textarea>
   </div>
-  <div class="row" style="margin-top:8px">
-    <button class="pri grow" id="btnCreate">Crear agenda</button>
-    <button id="btnAppend">+ Añadir</button>
-    <button id="btnNew" aria-label="Empezar de nuevo">🔄 Nueva</button>
+  <div class="row acts">
+    <button class="pri" id="btnCreate">Crear agenda</button>
+    <button id="btnAppend">Añadir</button>
+    <button id="btnNew">Empezar de nuevo</button>
   </div>
-  <p class="hint" id="micHint">Pulsa 🎤 y di lo que vais a hacer en orden. Separa con "luego", "después" o "y".</p>
-</div>
+  <p class="hint" id="micHint"></p>
+</section>
 
-<h2>Agenda de hoy</h2>
+<h2>Agenda</h2>
 <ul id="steps"></ul>
-<p class="hint" id="emptyHint">Todavía no hay pasos. Habla o escribe arriba.</p>
-<div class="row" style="margin-top:6px">
-  <input id="addOne" class="grow" placeholder="Añadir un paso (ej.: piscina)">
+<div class="empty" id="emptyHint">Mantén pulsado el micrófono y cuenta el día en orden.</div>
+<div class="row addrow">
+  <input id="addOne" class="grow" placeholder="Añadir un paso: piscina, no hay cole…">
   <button id="btnAddOne">Añadir</button>
 </div>
 <div class="row" style="margin-top:10px">
-  <button id="btnSaveRoutine">💾 Guardar como rutina</button>
-  <button id="btnReset">↺ Reiniciar hechos</button>
-  <button id="btnClear">🗑 Vaciar</button>
+  <button class="soft" id="btnSaveRoutine">Guardar como rutina</button>
+  <button class="soft" id="btnReset">Volver a empezar el día</button>
 </div>
 
-<p class="hint">Trucos: di "pintar <b>o</b> puzzle" para que ella elija. Toca ⚠️ en un paso para avisarle de un <b>cambio</b>.</p>
-
-<h2>Pautas acordadas</h2>
-<div class="card">
-  <ul class="notes" id="notes"></ul>
-  <textarea id="notesEd" hidden style="min-height:160px"></textarea>
-  <button id="btnNotes" style="margin-top:8px">✏️ Editar pautas</button>
-  <p class="hint">Las mismas pautas para todos los que la cuidan. Una por línea.</p>
+<h2>Herramientas</h2>
+<div class="tools">
+  <button class="tool" id="toolWait"><img alt="" id="icoWait">Esperar<span>Motivo, cuánto falta y qué hacer mientras</span></button>
+  <button class="tool" id="toolFeel"><img alt="" id="icoFeel">Cómo me siento<span>Elige una emoción y cuánta</span></button>
 </div>
 
-<h2>Rutinas guardadas</h2>
-<div class="card" id="routines"><p class="hint">Guarda una agenda (ej.: "Mañana de cole") para cargarla en un toque.</p></div>
+<h2>Rutinas</h2>
+<div class="panel" id="routines"></div>
 
-<h2>Mis pictogramas y fotos</h2>
-<div class="card">
-  <p class="hint" style="margin-top:0">Aquí se guardan tus elecciones: qué foto o pictograma sale cuando decís una palabra.</p>
-  <div class="row" style="margin-top:8px"><button id="btnNewChoice">+ Lugar o palabra</button><button id="btnNewPerson">+ Persona con foto</button></div>
+<h2>Fotos y pictogramas</h2>
+<div class="panel">
+  <p class="hint" style="margin-top:0">Lo que sale cuando decís una palabra. Las personas salen en pequeño cuando decís "con …".</p>
+  <div class="row" style="margin-top:10px"><button class="soft" id="btnNewPerson">Añadir persona</button><button class="soft" id="btnNewChoice">Añadir lugar o cosa</button></div>
   <div id="choices"></div>
 </div>
 
 <h2>Ajustes</h2>
-<div class="card">
+<div class="panel">
+  <label class="f" for="setView" style="margin-top:0">Cómo ve Miranda la agenda</label>
+  <select id="setView">
+    <option value="step">Paso a paso (una tarjeta grande)</option>
+    <option value="ft">Ahora y luego (dos tarjetas)</option>
+    <option value="list">Lista (todo el día)</option>
+  </select>
+  <label class="toggle"><input type="checkbox" id="setLate"> Por la tarde (desde las 17 h) usar "Ahora y luego"</label>
   <label class="toggle"><input type="checkbox" id="setCaps"> Palabras en MAYÚSCULAS</label>
-  <label class="toggle"><input type="checkbox" id="setDash"> Separar sílabas con guiones (PAR-QUE)</label>
+  <label class="toggle"><input type="checkbox" id="setDash"> Guiones entre sílabas (PAR-QUE)</label>
   <label class="toggle"><input type="checkbox" id="setSpeak"> Al tocar la palabra, leerla por sílabas</label>
-  <label class="toggle"><input type="checkbox" id="setLate"> Por la tarde (desde las 17 h) enseñarle solo AHORA y LUEGO</label>
   <label class="toggle"><input type="checkbox" id="setWhisper"> Dictado del propio móvil (sin teclado, descarga 80 MB una vez)</label>
-  <div class="row" style="margin-top:10px">
-    <button id="btnExport">📤 Exportar (para el otro móvil)</button>
-    <button id="btnImport">📥 Importar</button>
+
+  <label class="f">Los dos móviles a la vez</label>
+  <div id="syncBox"></div>
+
+  <div class="row" style="margin-top:14px">
+    <button class="soft" id="btnExport">Exportar copia</button>
+    <button class="soft" id="btnImport">Importar</button>
     <input type="file" id="importFile" accept="application/json,.json" hidden>
   </div>
-  <p class="hint">Exporta tus fotos, elecciones y rutinas en un archivo y envíalo por WhatsApp. En el otro móvil, pulsa Importar.</p>
+</div>
+
+<h2>Pautas acordadas</h2>
+<div class="panel">
+  <ul class="notes" id="notes"></ul>
+  <textarea id="notesEd" hidden style="min-height:180px"></textarea>
+  <button class="soft" id="btnNotes" style="margin-top:10px">Editar pautas</button>
 </div>
 
 <footer>
   Pictogramas: Sergio Palao. Origen: <a href="https://arasaac.org" target="_blank" rel="noopener">ARASAAC</a>. Licencia CC BY-NC-SA. Propiedad: Gobierno de Aragón (España).<br>
-  Tus fotos y elecciones se guardan solo en este móvil. · <b id="ver"></b>
+  Letra Andika (SIL) y Atkinson Hyperlegible (Braille Institute). <b id="ver"></b>
 </footer>
 
-<div class="bar">
-  <button class="ok" id="btnKid" style="flex:2">▶ Mostrar a mi hija</button>
+<div class="bar"><button class="go" id="btnKid">Mostrar a Miranda</button></div>
+
+<!-- Hoja: un paso -->
+<div class="sheet" id="stepSheet" hidden>
+  <div class="in">
+    <div class="prev"><div class="pic" id="ssPic"></div><div class="grow"><div class="syl" id="ssSyl" style="font-size:1.5rem"></div><div class="small" id="ssSrc"></div></div></div>
+    <div class="row"><button class="soft grow" id="ssImg">Cambiar imagen o foto</button></div>
+    <div id="ssOptsBox"><label class="f" for="ssOpts">Opciones para elegir (separadas por "o")</label><input id="ssOpts"></div>
+    <label class="f" for="ssWho">Con quién</label>
+    <input id="ssWho" placeholder="papá, mamá, abuela Gloria">
+    <label class="f">Tiempo para esta actividad</label>
+    <div class="chips" id="ssMin"></div>
+    <label class="f" for="ssSubs">Pasos pequeños (separados por comas)</label>
+    <input id="ssSubs" placeholder="calcetines, zapatos, velcro">
+    <div class="sw"><div><b>No hay (tachar)</b><span>Se ve tachado y se explica por qué</span></div><input type="checkbox" id="ssCancel"></div>
+    <div id="ssWhyBox"><label class="f" for="ssWhy">Por qué</label><input id="ssWhy" placeholder="Eva está enferma"></div>
+    <div class="sw"><div><b>Avisar de un cambio</b><span>Sale el cartel amarillo de CAMBIO</span></div><input type="checkbox" id="ssChange"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="soft" id="ssUp" aria-label="Subir">Subir</button>
+      <button class="soft" id="ssDown" aria-label="Bajar">Bajar</button>
+      <button class="ghost danger" id="ssDel">Quitar</button>
+      <span class="grow"></span>
+      <button class="pri" id="ssOk">Listo</button>
+    </div>
+  </div>
 </div>
 
-
-<!-- Editor -->
+<!-- Hoja: imagen (pictograma o foto) -->
 <div class="sheet" id="ed" hidden>
   <div class="in">
     <div class="prev">
       <img id="edPrev" class="thumb" alt="">
-      <div class="grow">
-        <div class="syl" id="edSyl" style="font-size:1.5rem"></div>
-        <div class="hint" id="edPhrase"></div>
-      </div>
+      <div class="grow"><div class="syl" id="edSyl" style="font-size:1.5rem"></div><div class="small" id="edPhrase"></div></div>
     </div>
-    <div class="tabs">
-      <button id="tabPicto" class="on">🖼 Pictograma</button>
-      <button id="tabPhoto">📷 Foto</button>
-    </div>
+    <div class="tabs"><button id="tabPicto" class="on">Pictograma</button><button id="tabPhoto">Foto</button></div>
     <div id="paneP">
-      <div class="row">
-        <input id="edQ" class="grow" placeholder="Buscar pictograma (ej.: hamburguesa)">
-        <button id="edSearch">Buscar</button>
-      </div>
+      <div class="row"><input id="edQ" class="grow" placeholder="Buscar pictograma"><button id="edSearch">Buscar</button></div>
       <div class="grid" id="edGrid"></div>
     </div>
     <div id="paneF" hidden>
-      <div class="row">
-        <button class="pri grow" id="edPick">Elegir del carrete</button>
-        <button class="grow" id="edCam">Hacer foto</button>
-      </div>
+      <div class="row"><button class="pri grow" id="edPick">Elegir del carrete</button><button class="grow" id="edCam">Hacer foto</button></div>
       <input type="file" id="edFile" accept="image/*" hidden>
       <input type="file" id="edCamFile" accept="image/*" capture="environment" hidden>
-      <p class="hint">Mejor una foto del sitio real (la puerta, el cartel) tal y como ella lo va a ver.</p>
+      <p class="hint">Mejor el sitio real (la puerta, el cartel) o la cara de la persona.</p>
     </div>
-    <label class="f" for="edLabel">Palabra que se muestra (en sílabas)</label>
-    <input id="edLabel" placeholder="Ej.: hamburguesa">
-    <div id="edTrigBox"><label class="f" for="edTrig">Otras palabras que lo activan (separadas por comas)</label>
-    <input id="edTrig" placeholder="Ej.: hamburguesa, burger, mcdonalds"></div>
-    <label class="toggle" id="edPersonRow" style="margin-top:8px"><input type="checkbox" id="edPerson"> Es una persona (sale en pequeño cuando decís "con …")</label>
-    <div id="edWhoBox"><label class="f" for="edWho">Con quién (sale en pequeño sobre la imagen)</label>
-    <input id="edWho" placeholder="Ej.: papá, mamá"></div>
-    <label class="f" for="edMaps">Lugar en Google Maps (opcional)</label>
-    <div class="row">
-      <input id="edMaps" class="grow" placeholder="Pega el enlace o escribe la dirección">
-      <button id="edMapsFind">🔎 Maps</button>
-    </div>
-    <label class="toggle" style="margin-top:10px"><input type="checkbox" id="edRemember" checked> Recordar para siempre</label>
-    <div class="row" style="margin-top:12px">
-      <button class="grow" id="edCancel">Cancelar</button>
-      <button class="pri grow" id="edSave">Guardar</button>
-    </div>
-    <div class="row" style="margin-top:8px" id="edDelRow" hidden>
-      <button class="grow" id="edDelete" style="color:var(--bad)">Borrar esta elección</button>
-    </div>
+    <label class="f" for="edLabel">Palabra que se muestra</label>
+    <input id="edLabel">
+    <div id="edTrigBox"><label class="f" for="edTrig">Otras palabras que lo activan (separadas por comas)</label><input id="edTrig" placeholder="hamburguesa, burger"></div>
+    <label class="toggle" id="edPersonRow"><input type="checkbox" id="edPerson"> Es una persona</label>
+    <div id="edMapsBox"><label class="f" for="edMaps">Lugar en Google Maps (opcional)</label>
+      <div class="row"><input id="edMaps" class="grow" placeholder="Pega el enlace o la dirección"><button id="edMapsFind">Maps</button></div></div>
+    <label class="toggle" id="edRememberRow"><input type="checkbox" id="edRemember" checked> Recordar para siempre</label>
+    <div class="row" style="margin-top:12px"><button class="grow" id="edCancel">Cancelar</button><button class="pri grow" id="edSave">Guardar</button></div>
+    <div class="row" style="margin-top:8px" id="edDelRow" hidden><button class="ghost danger grow" id="edDelete">Borrar esta elección</button></div>
   </div>
 </div>
 
-<!-- Modo niña -->
+<!-- Hoja: preparar espera -->
+<div class="sheet" id="waitSheet" hidden>
+  <div class="in">
+    <h3>Esperar</h3>
+    <label class="f" for="wWhat">¿A qué esperamos?</label>
+    <input id="wWhat" placeholder="médico, papá, turno, autobús">
+    <label class="f">¿Cuánto?</label>
+    <div class="chips" id="wMin"></div>
+    <label class="f" for="wDo">Mientras, puede elegir (separado por comas)</label>
+    <input id="wDo">
+    <div class="row" style="margin-top:14px"><button class="grow" id="wCancel">Cancelar</button><button class="go grow" id="wGo">Empezar</button></div>
+  </div>
+</div>
+
+<!-- Pantalla de Miranda -->
 <div id="kid" hidden>
-  <div id="kidTop">
-    <div id="kidStrip"></div>
-    <button id="kidLock" aria-label="Salir (mantener pulsado)">🔒</button>
+  <div id="kTop">
+    <div id="kStrip"></div>
+    <button class="round" id="kFeel" aria-label="Cómo me siento"><img alt="" style="width:34px;height:34px;object-fit:contain"></button>
+    <button class="round" id="kLock" aria-label="Salir: mantener pulsado">
+      <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor" aria-hidden="true"><path d="M17 9V7A5 5 0 0 0 7 7v2a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-8a2 2 0 0 0-2-2ZM9 7a3 3 0 0 1 6 0v2H9Z"/></svg>
+    </button>
   </div>
-  <div id="kidMain">
-    <div id="kidChange" hidden><img alt=""><span class="syl"></span></div>
-    <div id="kidOpts" hidden></div>
-    <div id="kidPic"><img id="kidImg" alt=""><div class="ppl" id="kidPpl"></div></div>
-    <div id="kidWord" class="syl"></div>
+  <div id="kMain"></div>
+  <div id="kNav">
+    <button class="arw" id="kPrev" aria-label="Atrás"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 4.5 7 12l8.5 7.5z"/></svg></button>
+    <div id="kPeek"></div>
+    <button class="arw" id="kNext" aria-label="Adelante"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 4.5 17 12l-8.5 7.5z"/></svg></button>
   </div>
-  <div id="kidBottom">
-    <div id="kidNext"><span class="arrow">➜</span><img id="kidNextImg" alt=""></div>
-    <button id="kidDone" aria-label="Hecho">✓</button>
+  <div id="board" hidden>
+    <div id="bHead"></div>
+    <div id="bBody"></div>
+    <div id="bNav"><button class="arw" id="bBack" aria-label="Volver" style="width:76px;height:76px;background:#fff;color:var(--mute);border:2px solid var(--line)"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 4.5 7 12l8.5 7.5z"/></svg></button></div>
   </div>
-  <div id="kidParty" hidden><span>⭐🎉⭐</span></div>
+  <div id="kParty" hidden><div>⭐🎉⭐</div></div>
 </div>
 
-<div id="toast"></div>
-
+<div id="toast" role="status"></div>
 <script>
 'use strict';
-// @@CORE-START  (lógica pura: sílabas y frases, probada aparte)
+// @@CORE-START  (lógica pura: sílabas, frases, personas, momentos del día)  (lógica pura: sílabas y frases, probada aparte)
 const VOW = 'aeiouáéíóúü';
 const STRONG = 'aeoáéóíú';
 const INSEP = new Set(['pr','pl','br','bl','fr','fl','tr','dr','cr','cl','gr','gl','kr','kl']);
@@ -403,6 +558,9 @@ function markText(text){
   subBoth(st, new RegExp('(^|\\s)hoy' + RX_END, 'g'), m => m[1] + '⟦T=hoy⟧');
   return st.t;
 }
+const CANCEL_RE = /^\s*(?:y\s+)?(?:pues\s+)?(?:no hay|no habrá|no habra|no tenemos|no toca|no vamos a ir a la|no vamos a ir al|no vamos a ir a|no vamos a la|no vamos al|no vamos a|no iremos a la|no iremos al|no iremos a|no podemos ir a la|no podemos ir al|no podemos ir a)\s+(.+)$/i;
+const REASON_STOP = new Set(['esta','estan','es','son','muy','un','una','poco','el','la','los','las','de','del','se','ha','han','hay','que','y','mi','tu','su','porque','ya','hoy','mañana'].map(stripAccents));
+function reasonWords(r){ return (r||'').split(/\s+/).map(w=>w.replace(/[.,;!?]/g,'')).filter(w => w && !REASON_STOP.has(stripAccents(w.toLocaleLowerCase('es')))).slice(0,3); }
 function parsePlan(text){
   const out = []; let lastTime = null;
   markText(text).replace(SEP_RE, '|').split('|').forEach(chunk => {
@@ -410,8 +568,13 @@ function parsePlan(text){
     chunk = chunk.replace(/⟦P=([^⟧]*)⟧/g, (_, p) => { people.push(...p.split('+')); return ' '; })
                  .replace(/⟦T=([a-z_]+)⟧/g, (_, t) => { times.push(t); return ' '; });
     times.forEach(t => { if (t !== lastTime && TIMES[t]){ out.push({time:t, text:TIMES[t].label}); lastTime = t; } });
+    // "no hay acrobacias porque Eva está enferma" → paso tachado con su motivo
+    let reason = null;
+    const cm = chunk.match(CANCEL_RE);
+    if (cm){ const parts = cm[1].split(/\s+(?:porque|ya que|pues)\s+/i); chunk = parts[0]; reason = (parts.slice(1).join(' ') || '').replace(/[.,;!?]+$/,'').trim(); }
     const s = cleanChunk(chunk);
-    if (s && keyWords(s).length){ const step = {text:s}; if (people.length) step.people = people; out.push(step); }
+    if (s && keyWords(s).length){ const step = {text:s}; if (people.length) step.people = people;
+      if (reason !== null){ step.cancelled = true; if (reason) step.reason = reason; } out.push(step); }
     else if (people.length){ for (let i = out.length-1; i >= 0; i--) if (!out[i].time){ out[i].people = (out[i].people||[]).concat(people); break; } }
   });
   return out;
@@ -451,28 +614,26 @@ function matchChoice(choices, words){
 const $ = s => document.querySelector(s);
 const API = 'https://api.arasaac.org/v1/pictograms/es';
 const IMG = id => `https://static.arasaac.org/pictograms/${id}/${id}_500.png`;
-const PH = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="16" fill="#eef2f7"/><text x="50" y="64" font-size="46" text-anchor="middle">❓</text></svg>');
-const LOAD = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="16" fill="#f3f4f6"/><text x="50" y="62" font-size="36" text-anchor="middle">⏳</text></svg>');
-const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const PH = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#EEF2F8"/><circle cx="50" cy="44" r="14" fill="none" stroke="#B9C3D3" stroke-width="6"/><circle cx="50" cy="72" r="4" fill="#B9C3D3"/></svg>');
+const LOAD = 'data:image/svg+xml;utf8,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" rx="18" fill="#F3F7FB"/></svg>');
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 let toastT;
-function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 2600); }
-
+function toast(m){ const t = $('#toast'); t.textContent = m; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2800); }
 const LS = {
   get(k,d){ try{ const v = localStorage.getItem('pa.'+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
-  set(k,v){ try{ localStorage.setItem('pa.'+k, JSON.stringify(v)); }catch(e){ toast('No se pudo guardar (memoria llena)'); } }
+  set(k,v){ try{ localStorage.setItem('pa.'+k, JSON.stringify(v)); }catch(e){ toast('No se pudo guardar: memoria llena'); } }
 };
 const S = {
   agenda: LS.get('agenda', []),
   choices: LS.get('choices', {}),
   cache: LS.get('cache', {}),
   routines: LS.get('routines', []),
-  settings: Object.assign({caps:true, dash:false, speak:true, late:false, ask:true}, LS.get('settings', {})),
-  profile: Object.assign({
-    notes: ['Anticipar con la agenda y avisar de los cambios.', 'Durante una crisis: calma, menos estímulos, sin confrontación, seguridad.']
-  }, LS.get('profile', {}))
+  settings: Object.assign({caps:true, dash:false, speak:true, late:false, whisper:false, view:'step'}, LS.get('settings', {})),
+  profile: Object.assign({ notes: ['Anticipar con la agenda y avisar de los cambios.', 'Durante una crisis: calma, menos estímulos, sin confrontación, seguridad.'] }, LS.get('profile', {}))
 };
-const save = (...keys) => keys.forEach(k => LS.set(k, S[k]));
+function save(...keys){ keys.forEach(k => LS.set(k, S[k])); if (typeof markDirty === 'function') markDirty(keys); }
+const joinY = a => !a || !a.length ? '' : a.length === 1 ? a[0] : a.slice(0,-1).join(', ') + ' y ' + a[a.length-1];
 
 /* ---------- Fotos (IndexedDB) ---------- */
 const DB = (() => {
@@ -506,27 +667,32 @@ function resizeImage(file, max = 1000){
     img.src = url;
   });
 }
+const blobToDataURL = b => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(b); });
+async function dataURLToBlob(d){ return (await fetch(d)).blob(); }
 
 /* ---------- ARASAAC ---------- */
-async function apiJSON(path){
-  try{ const r = await fetch(API + path); if (!r.ok) return null; return await r.json(); }catch(e){ return null; }
-}
+async function apiJSON(path){ try{ const r = await fetch(API + path); if (!r.ok) return null; return await r.json(); }catch(e){ return null; } }
 async function arasaacBest(q){ const j = await apiJSON('/bestsearch/' + encodeURIComponent(q)); return Array.isArray(j) && j[0] ? j[0]._id : null; }
 async function arasaacSearch(q){ const j = await apiJSON('/search/' + encodeURIComponent(q)); return Array.isArray(j) ? j.slice(0,40).map(x=>x._id) : []; }
-async function autoFind(label){
-  const key = keyWords(label).join(' ');
-  if (S.cache[key]) return S.cache[key];
-  let id = null;
-  for (const v of searchVariants(label)){ id = await arasaacBest(v); if (id) break; }
-  if (!id){ const r = await arasaacSearch(label); id = r[0] || null; }
-  if (id){ S.cache[key] = id; save('cache'); }
-  return id;
+const pending = {};
+function autoFind(label){
+  const key = keyWords(label).join(' ') || label;
+  if (S.cache[key]) return Promise.resolve(S.cache[key]);
+  if (pending[key]) return pending[key];
+  return pending[key] = (async () => {
+    let id = null;
+    for (const v of searchVariants(label)){ id = await arasaacBest(v); if (id) break; }
+    if (!id){ const r = await arasaacSearch(label); id = r[0] || null; }
+    if (id){ S.cache[key] = id; LS.set('cache', S.cache); }
+    delete pending[key];
+    return id;
+  })();
 }
 
-/* ---------- Resolver qué se muestra en cada paso ---------- */
-// type 'query' = elección guardada que usa un pictograma buscado por palabra (viene del perfil importado)
+/* ---------- Qué imagen sale en cada paso ---------- */
 function queryId(c){ return S.cache[keyWords(c.q || c.label).join(' ')] || null; }
 function timeOf(step){ return TIMES[step.time] || {label:step.text, q:step.text}; }
+const TIME_ICON = {hoy:'📅', manana_dia:'📆', manana:'🌅', mediodia:'☀️', tarde:'🌤️', noche:'🌙'};
 function resolveSync(step){
   if (step.override) return Object.assign({src:'solo hoy'}, step.override);
   if (step.time){
@@ -555,30 +721,38 @@ async function resolve(step){
 }
 const resolveText = t => resolve({text:t});
 async function setImg(img, r){
+  if (!img) return;
   img.classList.toggle('photo', !!r && r.type==='photo');
   if (!r || r.type==='none'){ img.src = PH; return; }
-  if (r.type==='picto'){ img.src = IMG(r.id); img.onerror = () => { img.onerror = null; img.src = PH; }; return; }
+  if (r.type==='picto'){ img.onerror = () => { img.onerror = null; img.src = PH; }; img.src = IMG(r.id); return; }
   img.src = (await photoURL(r.photo)) || PH;
 }
-function labelOf(r, step){ return (r && r.label) || step.text; }
+const labelOf = (r, step) => (r && r.label) || step.text;
+function refreshPeople(){
+  const m = {};
+  Object.values(S.choices).forEach(c => { if (!c.person || !c.label) return;
+    m[stripAccents(c.label.toLocaleLowerCase('es')).trim()] = c.label;
+    (c.triggers||[]).forEach(t => { if (t.length) m[t.join(' ')] = c.label; }); });
+  setPeople(m);
+}
+function peopleHTML(p){ return p && p.length ? '<div class="ppl">' + p.map(() => `<img alt="" src="${LOAD}">`).join('') + '</div>' : ''; }
+function fillPeople(box, p){ if (!p) return; box.querySelectorAll('.ppl img').forEach((im, k) => resolveText(p[k]).then(r => setImg(im, r))); }
 
-/* ---------- Sílabas en pantalla ---------- */
+/* ---------- Sílabas y voz ---------- */
 function sylHTML(label){
   const caps = S.settings.caps, dash = S.settings.dash;
-  return label.split(/\s+/).filter(Boolean).map(w => {
+  return String(label).split(/\s+/).filter(Boolean).map(w => {
     const parts = syllabify(w).map((s,i) => `<span class="s s${i%2}">${esc(caps ? s.toLocaleUpperCase('es') : s)}</span>`);
-    return '<span class="w">' + parts.join(dash ? '<span class="d">-</span><wbr>' : '<wbr>') + '</span>';
+    return '<span class="w">' + parts.join(dash ? '<span class="d">-</span>' : '') + '</span>';
   }).join(' ');
 }
 let voice = null;
-function pickVoice(){
-  if (!('speechSynthesis' in window)) return null;
-  const vs = speechSynthesis.getVoices();
-  return vs.find(v=>v.lang==='es-ES') || vs.find(v=>v.lang && v.lang.startsWith('es')) || null;
-}
+function pickVoice(){ if (!('speechSynthesis' in window)) return null; const vs = speechSynthesis.getVoices();
+  return vs.find(v=>v.lang==='es-ES') || vs.find(v=>v.lang && v.lang.startsWith('es')) || null; }
 if ('speechSynthesis' in window){ speechSynthesis.onvoiceschanged = () => { voice = pickVoice(); }; voice = pickVoice(); }
 function say(text, rate, onstart, onend){
-  const u = new SpeechSynthesisUtterance(text); u.lang = 'es-ES'; if (voice) u.voice = voice; u.rate = rate;
+  if (!('speechSynthesis' in window)) return;
+  const u = new SpeechSynthesisUtterance(text); u.lang = 'es-ES'; if (voice) u.voice = voice; u.rate = rate || 0.85;
   if (onstart) u.onstart = onstart; if (onend) u.onend = onend; speechSynthesis.speak(u);
 }
 function speakLabel(label, el, keep){
@@ -587,99 +761,98 @@ function speakLabel(label, el, keep){
   const spans = el ? [...el.querySelectorAll('.s')] : [];
   const clear = () => spans.forEach(s=>s.classList.remove('on'));
   if (S.settings.speak){
-    label.split(/\s+/).filter(Boolean).flatMap(w=>syllabify(w)).forEach((syl,i) =>
+    String(label).split(/\s+/).filter(Boolean).flatMap(w=>syllabify(w)).forEach((syl,i) =>
       say(syl, 0.6, () => { clear(); spans[i] && spans[i].classList.add('on'); }));
   }
   say(label, 0.85, () => spans.forEach(s=>s.classList.add('on')), clear);
 }
-
-/* ---------- Agenda (vista de padres) ---------- */
-function joinY(a){ return !a || !a.length ? '' : a.length === 1 ? a[0] : a.slice(0,-1).join(', ') + ' y ' + a[a.length-1]; }
-function peopleHTML(p){ return p && p.length ? '<div class="ppl">' + p.map(() => `<img alt="" src="${LOAD}">`).join('') + '</div>' : ''; }
-function fillPeople(box, p){ if (!p) return; box.querySelectorAll('.ppl img').forEach((im, k) => resolveText(p[k]).then(r => setImg(im, r))); }
-function refreshPeople(){
-  const m = {};
-  Object.values(S.choices).forEach(c => { if (!c.person || !c.label) return;
-    m[stripAccents(c.label.toLocaleLowerCase('es')).trim()] = c.label;
-    (c.triggers||[]).forEach(t => { if (t.length) m[t.join(' ')] = c.label; }); });
-  setPeople(m);
+// Aviso suave (sin sobresaltos) al acabar un temporizador
+let actx = null;
+function chime(){
+  try{
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const t0 = actx.currentTime;
+    [523.25, 659.25, 783.99].forEach((f, i) => {
+      const o = actx.createOscillator(), g = actx.createGain(); o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, t0 + i*0.35); g.gain.linearRampToValueAtTime(0.18, t0 + i*0.35 + 0.05); g.gain.exponentialRampToValueAtTime(0.001, t0 + i*0.35 + 1.2);
+      o.connect(g).connect(actx.destination); o.start(t0 + i*0.35); o.stop(t0 + i*0.35 + 1.3);
+    });
+  }catch(e){}
+  if (navigator.vibrate) navigator.vibrate([80, 120, 80]);
 }
+
+/* ---------- Agenda ---------- */
+function stepMatches(a, b){ const ka = keyWords(a), kb = keyWords(b); return ka.length && kb.length && (ka.every(w=>kb.includes(w)) || kb.every(w=>ka.includes(w))); }
 function addSteps(items, replace){
-  const steps = items.map(it => {
+  const steps = [];
+  items.forEach(it => {
     const st = Object.assign({uid:uid(), done:false}, typeof it === 'string' ? {text:it} : it);
     if (!st.time && !st.options){ const o = splitOptions(st.text); if (o){ st.options = o; st.text = o.join(' o '); } }
-    return st; });
+    // "no hay acrobacias" con la agenda ya hecha: se tacha la que ya estaba
+    if (!replace && st.cancelled){
+      const ex = S.agenda.find(x => !x.time && !x.done && stepMatches(x.text, st.text));
+      if (ex){ ex.cancelled = true; if (st.reason) ex.reason = st.reason; return; }
+    }
+    steps.push(st);
+  });
   S.agenda = replace ? steps : S.agenda.concat(steps);
   save('agenda'); renderSteps();
+}
+function stepMeta(st, r){
+  const t = [];
+  if (st.time) t.push('<span class="tag">momento del día</span>');
+  if (st.options) t.push('<span class="tag">ella elige</span>');
+  if (st.people && st.people.length) t.push(`<span class="tag">con ${esc(joinY(st.people))}</span>`);
+  if (st.min) t.push(`<span class="tag time">${st.min} min</span>`);
+  if (st.subs && st.subs.length) t.push(`<span class="tag">${st.subs.length} pasos pequeños</span>`);
+  if (st.change) t.push('<span class="tag chg">cambio</span>');
+  if (st.cancelled) t.push(`<span class="tag why">no hay${st.reason ? ': ' + esc(st.reason) : ''}</span>`);
+  if (r && r.type === 'none') t.push('<span class="tag">toca para elegir imagen</span>');
+  return t.join('');
 }
 function renderSteps(){
   const ul = $('#steps'); ul.innerHTML = '';
   $('#emptyHint').hidden = S.agenda.length > 0;
-  S.agenda.forEach((st, i) => {
-    const li = document.createElement('li'); li.className = 'step' + (st.done ? ' done' : '') + (st.time ? ' tstep' : '');
-    li.innerHTML = `<button class="num" data-a="done" aria-label="Marcar hecho">${st.done ? '✓' : i+1}</button>
-      <div class="pic"><img class="thumb" alt="" src="${LOAD}">${peopleHTML(st.people)}</div>
-      <div class="lbl"><div class="syl"></div><div class="src"></div></div>
-      <div class="acts"><button data-a="edit" aria-label="Cambiar">✏️</button>
-      <div class="row" style="gap:4px;flex-wrap:nowrap"><button data-a="up" aria-label="Subir">▲</button><button data-a="down" aria-label="Bajar">▼</button></div></div>
-      <div class="acts"><button data-a="map" aria-label="Cómo llegar" hidden>📍</button><button data-a="change" aria-label="Avisar de cambio" style="${st.change ? 'background:#fde68a' : ''}">⚠️</button><button data-a="del" aria-label="Quitar">✕</button></div>`;
-    li.dataset.uid = st.uid; ul.appendChild(li);
+  let n = 0;
+  S.agenda.forEach(st => {
+    if (!st.time) n++;
+    const li = document.createElement('li');
+    li.className = 'step' + (st.done ? ' done' : '') + (st.time ? ' tstep' : '') + (st.cancelled ? ' cancel' : '');
+    li.dataset.uid = st.uid;
+    const node = st.time ? (TIME_ICON[st.time] || '🕒') : (st.done ? '✓' : n);
+    const pic = st.options ? `<div class="duo">${st.options.slice(0,2).map(() => `<img alt="" src="${LOAD}">`).join('')}</div>` : `<img class="thumb" alt="" src="${LOAD}">`;
+    li.innerHTML = `<button class="num" data-a="done" aria-label="Marcar hecho">${node}</button>
+      <div class="pic">${pic}${peopleHTML(st.people)}</div>
+      <div class="lbl"><div class="syl"></div><div class="meta"></div></div>`;
+    ul.appendChild(li);
     fillPeople(li, st.people);
-    if (st.options){ renderChoiceStep(li, st); return; }
+    if (st.options){
+      li.querySelectorAll('.duo img').forEach((im,k) => resolveText(st.options[k]).then(r => setImg(im, r)));
+      li.querySelector('.syl').innerHTML = st.options.map(sylHTML).join(' <span class="small">o</span> ');
+      li.querySelector('.meta').innerHTML = stepMeta(st);
+      return;
+    }
     resolve(st).then(r => {
       setImg(li.querySelector('img.thumb'), r);
-      const lbl = labelOf(r, st);
-      li.querySelector('.syl').innerHTML = sylHTML(lbl);
-      li.querySelector('.syl').onclick = e => speakLabel(lbl, e.currentTarget);
-      li.querySelector('.src').innerHTML = (st.change ? '<span class="badge">CAMBIO</span> ' : '')
-        + (st.people && st.people.length ? '👥 ' + esc(joinY(st.people)) + ' · ' : '')
-        + esc(st.time ? '🕒 momento del día' : r.type==='photo' ? `📷 foto · ${r.src}` : r.type==='none' ? '❓ toca ✏️ para elegir' : `🖼 ${r.src}`);
-      const mb = li.querySelector('[data-a="map"]'); if (r.maps){ mb.hidden = false; mb.dataset.maps = r.maps; }
+      li.querySelector('.syl').innerHTML = sylHTML(labelOf(r, st));
+      li.querySelector('.meta').innerHTML = stepMeta(st, r);
     });
   });
 }
-// Paso de elección: "pintar o puzzle"
-function renderChoiceStep(li, st){
-  const duo = document.createElement('div'); duo.className = 'duo';
-  st.options.slice(0,2).forEach((o,k) => { const im = document.createElement('img'); im.src = LOAD; im.dataset.opt = k; duo.appendChild(im); resolveText(o).then(r => setImg(im, r)); });
-  li.querySelector('img.thumb').replaceWith(duo);
-  li.querySelector('.syl').innerHTML = st.options.map(sylHTML).join(' <b style="color:#6b7280">o</b> ');
-  li.querySelector('.src').innerHTML = (st.change ? '<span class="badge">CAMBIO</span> ' : '') + 'ella elige · toca una imagen para cambiarla';
-}
 $('#steps').addEventListener('click', e => {
-  const im = e.target.closest('.duo img');
-  if (im){ const st = S.agenda.find(s => s.uid === im.closest('.step').dataset.uid); if (st) openEditor({phrase: st.options[+im.dataset.opt]}); return; }
-  const b = e.target.closest('button[data-a]'); if (!b) return;
-  const li = b.closest('.step'); const i = S.agenda.findIndex(s => s.uid === li.dataset.uid); if (i < 0) return;
-  const a = b.dataset.a;
-  if (a==='done'){ S.agenda[i].done = !S.agenda[i].done; }
-  else if (a==='up' && i>0){ [S.agenda[i-1], S.agenda[i]] = [S.agenda[i], S.agenda[i-1]]; }
-  else if (a==='down' && i<S.agenda.length-1){ [S.agenda[i+1], S.agenda[i]] = [S.agenda[i], S.agenda[i+1]]; }
-  else if (a==='del'){ S.agenda.splice(i,1); }
-  else if (a==='change'){ S.agenda[i].change = !S.agenda[i].change; S.agenda[i].changeSeen = false; }
-  else if (a==='edit' && S.agenda[i].options){
-    const t = prompt('Opciones para elegir (sepáralas con "o")', S.agenda[i].options.join(' o ')); if (!t) return;
-    const o = splitOptions(t);
-    if (o){ S.agenda[i].options = o; S.agenda[i].text = o.join(' o '); } else { delete S.agenda[i].options; S.agenda[i].text = cleanChunk(t); }
-  }
-  else if (a==='edit'){ openEditor({stepUid: S.agenda[i].uid}); return; }
-  else if (a==='map'){ openMaps(b.dataset.maps); return; }
-  else return;
-  save('agenda'); renderSteps();
+  const li = e.target.closest('.step'); if (!li) return;
+  const i = S.agenda.findIndex(s => s.uid === li.dataset.uid); if (i < 0) return;
+  if (e.target.closest('[data-a="done"]') && !S.agenda[i].time){ S.agenda[i].done = !S.agenda[i].done; save('agenda'); renderSteps(); return; }
+  openStep(S.agenda[i].uid);
 });
-function openMaps(m){
-  const url = /^https?:\/\//i.test(m) ? m : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(m);
-  window.open(url, '_blank', 'noopener');
-}
-
 $('#btnCreate').onclick = () => {
   const t = $('#txt').value.trim(); if (!t){ toast('Habla o escribe primero'); return; }
   const steps = parsePlan(t); if (!steps.length){ toast('No he encontrado pasos'); return; }
-  addSteps(steps, true); toast(steps.length===1 ? '1 paso creado' : `${steps.length} pasos creados`);
+  addSteps(steps, true); toast(steps.length === 1 ? '1 paso' : `${steps.length} pasos`);
 };
 $('#btnAppend').onclick = () => {
   const t = $('#txt').value.trim(); if (!t) return;
-  const steps = parsePlan(t); addSteps(steps, false); $('#txt').value = ''; toast(steps.length===1 ? '1 paso añadido' : `${steps.length} pasos añadidos`);
+  addSteps(parsePlan(t), false); $('#txt').value = ''; toast('Añadido');
 };
 $('#btnAddOne').onclick = () => {
   const t = $('#addOne').value.trim(); if (!t) return;
@@ -687,8 +860,556 @@ $('#btnAddOne').onclick = () => {
   addSteps(items, false); $('#addOne').value = '';
 };
 $('#addOne').addEventListener('keydown', e => { if (e.key==='Enter') $('#btnAddOne').click(); });
-$('#btnClear').onclick = () => { if (S.agenda.length && confirm('¿Vaciar la agenda?')){ S.agenda = []; save('agenda'); renderSteps(); } };
-$('#btnReset').onclick = () => { S.agenda.forEach(s => { s.done = false; s.changeSeen = false; if (s.chosenFrom){ s.options = s.chosenFrom; s.text = s.options.join(' o '); delete s.chosenFrom; } }); save('agenda'); renderSteps(); };
+$('#btnReset').onclick = () => {
+  S.agenda.forEach(s => { s.done = false; s.changeSeen = false; s.subsDone = [];
+    if (s.chosenFrom){ s.options = s.chosenFrom; s.text = s.options.join(' o '); delete s.chosenFrom; } });
+  save('agenda'); renderSteps(); toast('El día empieza otra vez');
+};
+
+/* ---------- Hoja de un paso ---------- */
+let SS = null;
+const MINS = [0, 2, 5, 10, 15, 20, 30, 45];
+function openStep(id){
+  const st = S.agenda.find(s => s.uid === id); if (!st) return;
+  SS = {id, min: st.min || 0};
+  const pic = $('#ssPic'); pic.innerHTML = `<img class="thumb" alt="" src="${LOAD}">${peopleHTML(st.people)}`; fillPeople(pic, st.people);
+  resOfStep(st).then(r => { setImg(pic.querySelector('img'), r); $('#ssSyl').innerHTML = st.options ? st.options.map(sylHTML).join(' o ') : sylHTML(labelOf(r, st)); $('#ssSrc').textContent = st.time ? 'Momento del día' : (r.type==='photo' ? 'Foto' : r.type==='none' ? 'Sin imagen' : 'Pictograma'); });
+  $('#ssOptsBox').hidden = !st.options; $('#ssOpts').value = st.options ? st.options.join(' o ') : '';
+  $('#ssImg').hidden = !!st.options;
+  $('#ssWho').value = (st.people||[]).join(', ');
+  $('#ssSubs').value = (st.subs||[]).join(', ');
+  $('#ssCancel').checked = !!st.cancelled; $('#ssWhy').value = st.reason || ''; $('#ssWhyBox').hidden = !st.cancelled;
+  $('#ssChange').checked = !!st.change;
+  const timeOnly = !!st.time;
+  ['#ssWho','#ssSubs'].forEach(s => { $(s).hidden = timeOnly; $(s).previousElementSibling.hidden = timeOnly; });
+  $('#ssMin').hidden = timeOnly; $('#ssMin').previousElementSibling.hidden = timeOnly;
+  $('#ssCancel').closest('.sw').hidden = timeOnly;
+  renderMins();
+  $('#stepSheet').hidden = false;
+}
+const resOfStep = st => st.options ? resolveText(st.options[0]) : resolve(st);
+function renderMins(){ $('#ssMin').innerHTML = MINS.map(m => `<button class="chip ${SS.min===m ? 'on' : ''}" data-m="${m}">${m ? m + ' min' : 'Sin tiempo'}</button>`).join(''); }
+$('#ssMin').onclick = e => { const b = e.target.closest('[data-m]'); if (b){ SS.min = +b.dataset.m; renderMins(); } };
+$('#ssCancel').onchange = () => { $('#ssWhyBox').hidden = !$('#ssCancel').checked; };
+function applyStep(){
+  const st = S.agenda.find(s => s.uid === SS.id); if (!st) return null;
+  if (st.options){ const o = splitOptions($('#ssOpts').value); if (o){ st.options = o; st.text = o.join(' o '); } else { delete st.options; st.text = cleanChunk($('#ssOpts').value) || st.text; } }
+  const who = $('#ssWho').value.split(',').map(s=>s.trim()).filter(Boolean); if (who.length) st.people = who; else delete st.people;
+  const subs = $('#ssSubs').value.split(',').map(s=>s.trim()).filter(Boolean); if (subs.length) st.subs = subs; else delete st.subs;
+  if (SS.min) st.min = SS.min; else delete st.min;
+  st.cancelled = $('#ssCancel').checked || undefined; st.reason = st.cancelled ? ($('#ssWhy').value.trim() || undefined) : undefined;
+  const ch = $('#ssChange').checked; if (ch && !st.change) st.changeSeen = false; st.change = ch || undefined;
+  return st;
+}
+function closeStep(){ $('#stepSheet').hidden = true; SS = null; save('agenda'); renderSteps(); }
+$('#ssOk').onclick = () => { applyStep(); closeStep(); };
+$('#stepSheet').addEventListener('click', e => { if (e.target.id === 'stepSheet'){ applyStep(); closeStep(); } });
+$('#ssImg').onclick = () => { const st = applyStep(); $('#stepSheet').hidden = true; const id = SS.id; SS = null; save('agenda'); openEditor({stepUid: id}); };
+function moveStep(d){ applyStep(); const i = S.agenda.findIndex(s => s.uid === SS.id), j = i + d; if (j < 0 || j >= S.agenda.length) return;
+  [S.agenda[i], S.agenda[j]] = [S.agenda[j], S.agenda[i]]; save('agenda'); renderSteps(); toast(d < 0 ? 'Subido' : 'Bajado'); }
+$('#ssUp').onclick = () => moveStep(-1);
+$('#ssDown').onclick = () => moveStep(1);
+$('#ssDel').onclick = () => { S.agenda = S.agenda.filter(s => s.uid !== SS.id); closeStep(); toast('Paso quitado'); };
+
+/* ---------- Editor de imagen ---------- */
+let ED = null;
+const trigText = arr => (arr||[]).map(t=>t.join(' ')).join(', ');
+const parseTrig = s => s.split(',').map(x=>keyWords(x)).filter(t=>t.length);
+async function openEditor(o){
+  const step = o.stepUid ? S.agenda.find(s=>s.uid===o.stepUid) : null;
+  let base = null, cid = o.cid || null;
+  if (step){ const r = resolveSync(step); if (r && r.src==='guardado') cid = r.cid; base = r; }
+  else if (cid) base = S.choices[cid];
+  else if (o.phrase){ cid = matchChoice(S.choices, keyWords(o.phrase)); if (cid) base = S.choices[cid]; }
+  if (base && base.type==='query'){ const qid = queryId(base); base = Object.assign({}, base, qid ? {type:'picto', id:qid} : {type:'none'}); }
+  const isTime = !!(step && step.time);
+  const phrase = step ? step.text : (o.phrase || '');
+  ED = { step, cid, sel: base && base.type!=='none' ? {type:base.type, id:base.id, photo:base.photo} : null, blob:null };
+  $('#edPhrase').textContent = step ? `Paso: "${phrase}"` : (cid ? 'Elección guardada' : (o.person ? 'Nueva persona' : 'Nueva elección'));
+  $('#edLabel').value = (base && base.label) || phrase;
+  $('#edTrig').value = cid ? trigText(S.choices[cid].triggers) : keyWords(phrase).join(' ');
+  $('#edMaps').value = (base && base.maps) || '';
+  $('#edRemember').checked = !(step && step.override);
+  $('#edRememberRow').hidden = !step;
+  $('#edDelRow').hidden = !cid;
+  $('#edTrigBox').hidden = isTime; $('#edPersonRow').hidden = isTime;
+  $('#edPerson').checked = !!((base && base.person) || o.person);
+  $('#edMapsBox').hidden = !!o.person || !!(base && base.person) || isTime;
+  $('#edQ').value = isTime ? timeOf(step).q : (keyWords(phrase).slice(-1)[0] || phrase);
+  tab((ED.sel && ED.sel.type==='photo') || (o.person && !ED.sel) ? 'F' : 'P');
+  refreshPreview();
+  $('#ed').hidden = false;
+  if ($('#edQ').value) doSearch();
+}
+function refreshPreview(){
+  $('#edSyl').innerHTML = sylHTML($('#edLabel').value.trim() || '…');
+  const img = $('#edPrev');
+  if (ED.blob){ img.classList.add('photo'); img.src = URL.createObjectURL(ED.blob); } else setImg(img, ED.sel);
+}
+$('#edLabel').addEventListener('input', refreshPreview);
+function tab(w){ $('#tabPicto').classList.toggle('on', w==='P'); $('#tabPhoto').classList.toggle('on', w==='F'); $('#paneP').hidden = w!=='P'; $('#paneF').hidden = w!=='F'; }
+$('#tabPicto').onclick = () => tab('P'); $('#tabPhoto').onclick = () => tab('F');
+async function doSearch(){
+  const q = $('#edQ').value.trim(); if (!q) return;
+  const g = $('#edGrid'); g.innerHTML = '<p class="hint">Buscando…</p>';
+  const ids = await arasaacSearch(q);
+  if (!ids.length){ g.innerHTML = '<p class="hint">Sin resultados. Prueba otra palabra o revisa la conexión.</p>'; return; }
+  g.innerHTML = ids.map(id => `<img loading="lazy" data-id="${id}" src="${IMG(id).replace('_500','_300')}" class="${ED && ED.sel && ED.sel.id===id ? 'sel' : ''}" alt="">`).join('');
+}
+$('#edSearch').onclick = doSearch;
+$('#edQ').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
+$('#edGrid').addEventListener('click', e => {
+  const im = e.target.closest('img[data-id]'); if (!im) return;
+  ED.sel = {type:'picto', id:+im.dataset.id}; ED.blob = null;
+  $('#edGrid').querySelectorAll('img').forEach(x => x.classList.toggle('sel', x===im)); refreshPreview();
+});
+$('#edPick').onclick = () => $('#edFile').click();
+$('#edCam').onclick = () => $('#edCamFile').click();
+async function onFile(e){
+  const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
+  try{ ED.blob = await resizeImage(f); ED.sel = {type:'photo'}; refreshPreview(); }catch(err){ toast(err.message); }
+}
+$('#edFile').onchange = onFile; $('#edCamFile').onchange = onFile;
+function openMaps(m){ window.open(/^https?:\/\//i.test(m) ? m : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(m), '_blank', 'noopener'); }
+$('#edMapsFind').onclick = () => { const q = $('#edMaps').value.trim() || $('#edLabel').value.trim(); if (q) openMaps(q); toast('En Maps: elige el sitio, Compartir, copia el enlace y pégalo aquí'); };
+$('#edCancel').onclick = () => { $('#ed').hidden = true; ED = null; };
+$('#ed').addEventListener('click', e => { if (e.target.id==='ed') $('#edCancel').click(); });
+$('#edSave').onclick = async () => {
+  if (!ED.sel){ toast('Elige un pictograma o una foto'); return; }
+  const choice = { type: ED.sel.type, label: $('#edLabel').value.trim() || (ED.step ? ED.step.text : ''), maps: $('#edMaps').value.trim() || undefined };
+  if (ED.sel.type==='photo'){
+    if (ED.blob){ const pid = 'ph_' + uid(); try{ await DB.put(pid, ED.blob); }catch(err){ toast('No se pudo guardar la foto'); return; } choice.photo = pid; }
+    else choice.photo = ED.sel.photo;
+  } else choice.id = ED.sel.id;
+  if (!choice.label){ toast('Escribe la palabra'); return; }
+  const isTime = !!(ED.step && ED.step.time);
+  if (!isTime && $('#edPerson').checked) choice.person = true;
+  const remember = !ED.step || $('#edRemember').checked;
+  if (remember){
+    let trig = isTime ? [['__t' + ED.step.time]] : parseTrig($('#edTrig').value);
+    if (!trig.length) trig = [keyWords(choice.label)];
+    choice.triggers = trig; if (isTime) choice.time = true;
+    S.choices[ED.cid || ('c_' + uid())] = choice;
+    if (ED.step) delete ED.step.override;
+    save('choices');
+  } else if (ED.step) ED.step.override = choice;
+  save('agenda'); refreshPeople();
+  $('#ed').hidden = true; ED = null;
+  renderSteps(); renderChoices(); toast('Guardado');
+};
+$('#edDelete').onclick = () => {
+  if (!ED.cid || !confirm('¿Borrar esta elección?')) return;
+  delete S.choices[ED.cid]; save('choices'); refreshPeople();
+  $('#ed').hidden = true; ED = null; renderSteps(); renderChoices();
+};
+
+/* ---------- Fotos y pictogramas guardados ---------- */
+function renderChoices(){
+  const box = $('#choices'); const ids = Object.keys(S.choices).filter(id => !S.choices[id].time);
+  if (!ids.length){ box.innerHTML = '<p class="hint">Todavía nada. Empieza por papá, mamá y el cole.</p>'; return; }
+  ids.sort((a,b) => (S.choices[b].person ? 1 : 0) - (S.choices[a].person ? 1 : 0) || S.choices[a].label.localeCompare(S.choices[b].label, 'es'));
+  box.innerHTML = ids.map(id => { const c = S.choices[id]; return `<div class="li" data-id="${id}">
+    <img class="thumb ${c.person ? 'round' : ''}" alt="" src="${LOAD}"><div class="grow"><div class="syl">${sylHTML(c.label)}</div>
+    <div class="small">${c.person ? 'Persona · ' : ''}se activa con: ${esc(trigText(c.triggers))}${c.maps ? ' · con mapa' : ''}</div></div>
+    <button class="soft" data-a="edit">Editar</button></div>`; }).join('');
+  box.querySelectorAll('.li').forEach(el => resolveChoice(S.choices[el.dataset.id]).then(r => setImg(el.querySelector('img'), r)));
+}
+$('#choices').addEventListener('click', e => { const b = e.target.closest('[data-a="edit"]'); if (b) openEditor({cid: b.closest('.li').dataset.id}); });
+$('#btnNewPerson').onclick = () => { const p = prompt('¿Quién es? (papá, mamá, abuela Gloria, Eva…)'); if (p && p.trim()) openEditor({phrase: p.trim().toLocaleLowerCase('es'), person: true}); };
+$('#btnNewChoice').onclick = () => { const p = prompt('¿Qué lugar o cosa? (hamburguesería, piscina…)'); if (p && p.trim()) openEditor({phrase: cleanChunk(p.trim())}); };
+
+/* ---------- Rutinas ---------- */
+function renderRoutines(){
+  const box = $('#routines');
+  if (!S.routines.length){ box.innerHTML = '<p class="hint" style="margin:0">Guarda una agenda que se repite (mañana de cole, baño y cama) para cargarla de un toque.</p>'; return; }
+  box.innerHTML = S.routines.map((r,i) => `<div class="li"><div class="grow"><b>${esc(r.name)}</b><div class="small">${esc(r.steps.map(s=>s.text).join(' · '))}</div></div>
+    <button class="soft" data-a="load" data-i="${i}">Cargar</button><button class="ghost danger" data-a="del" data-i="${i}" aria-label="Borrar rutina">✕</button></div>`).join('');
+}
+$('#routines').addEventListener('click', e => {
+  const b = e.target.closest('button[data-a]'); if (!b) return; const i = +b.dataset.i;
+  if (b.dataset.a==='load'){ S.agenda = S.routines[i].steps.map(s => Object.assign({}, s, {uid:uid(), done:false})); save('agenda'); renderSteps(); toast('Rutina cargada'); window.scrollTo({top:0, behavior:'smooth'}); }
+  else if (confirm(`¿Borrar la rutina "${S.routines[i].name}"?`)){ S.routines.splice(i,1); save('routines'); renderRoutines(); }
+});
+$('#btnSaveRoutine').onclick = () => {
+  if (!S.agenda.length){ toast('La agenda está vacía'); return; }
+  const n = prompt('Nombre de la rutina (ej.: Mañana de cole)'); if (!n || !n.trim()) return;
+  S.routines.push({name:n.trim(), steps:S.agenda.map(s => { const o = s.options || s.chosenFrom;
+    const base = {people:s.people, min:s.min, subs:s.subs};
+    return Object.assign(base, o ? {text:o.join(' o '), options:o} : {text:s.text, override:s.override, time:s.time}); })});
+  save('routines'); renderRoutines(); toast('Rutina guardada');
+};
+
+/* ---------- Pautas ---------- */
+function renderNotes(){ $('#notes').innerHTML = S.profile.notes.map(n => `<li>${esc(n)}</li>`).join('') || '<li class="hint">Sin pautas todavía</li>'; }
+$('#btnNotes').onclick = () => {
+  const ta = $('#notesEd');
+  if (ta.hidden){ ta.value = S.profile.notes.join('\n'); ta.hidden = false; $('#notes').hidden = true; $('#btnNotes').textContent = 'Guardar pautas'; }
+  else { S.profile.notes = ta.value.split('\n').map(s=>s.trim()).filter(Boolean); save('profile'); ta.hidden = true; $('#notes').hidden = false; $('#btnNotes').textContent = 'Editar pautas'; renderNotes(); }
+};
+
+/* ---------- Ajustes, exportar e importar ---------- */
+[['#setCaps','caps'],['#setDash','dash'],['#setSpeak','speak'],['#setLate','late'],['#setWhisper','whisper']].forEach(([sel,k]) => {
+  $(sel).checked = !!S.settings[k];
+  $(sel).onchange = () => { S.settings[k] = $(sel).checked; save('settings'); renderSteps(); renderChoices(); };
+});
+$('#setView').value = S.settings.view; $('#setView').onchange = () => { S.settings.view = $('#setView').value; save('settings'); };
+async function shareFile(file){
+  if (navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file], title:file.name}); return; }catch(e){ if (e.name==='AbortError') return; } }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
+}
+function photoIds(){
+  const s = new Set(); const add = c => { if (c && c.photo) s.add(c.photo); };
+  Object.values(S.choices).forEach(add); S.agenda.forEach(st => add(st.override)); S.routines.forEach(r => (r.steps||[]).forEach(st => add(st.override)));
+  return [...s];
+}
+$('#btnExport').onclick = async () => {
+  const photos = {};
+  for (const id of photoIds()){ const b = await DB.get(id).catch(()=>null); if (b) photos[id] = await blobToDataURL(b); }
+  const data = JSON.stringify({app:'pictoagenda', v:5, choices:S.choices, routines:S.routines, profile:S.profile, photos});
+  shareFile(new File([data], 'pictoagenda.json', {type:'application/json'}));
+};
+$('#btnImport').onclick = () => $('#importFile').click();
+const union = (a, b) => [...new Set([...(a||[]), ...(b||[])])];
+$('#importFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+  try{
+    const d = JSON.parse(await f.text()); if (d.app!=='pictoagenda') throw new Error();
+    for (const [id, url] of Object.entries(d.photos||{})) await DB.put(id, await dataURLToBlob(url));
+    Object.assign(S.choices, d.choices||{});
+    const names = new Set(S.routines.map(r=>r.name));
+    (d.routines||[]).forEach(r => { if (!names.has(r.name)) S.routines.push(r); });
+    if (d.profile && d.profile.notes) S.profile.notes = d.profile.replaceDefaults ? d.profile.notes.slice() : union(S.profile.notes, d.profile.notes);
+    save('choices','routines','profile'); renderAll(); toast('Importado');
+  }catch(err){ toast('Ese archivo no es de PictoAgenda'); }
+};
+
+/* ---------- Sincronizar los dos móviles ---------- */
+const SYNC_KEYS = ['agenda','choices','routines','profile'];
+const SY = { code: LS.get('syncCode', ''), meta: LS.get('syncMeta', {updated:{}, photos:{}}), timer:null, busy:false, again:false };
+function markDirty(keys){
+  if (!SY.code) return;
+  let hit = false; keys.forEach(k => { if (SYNC_KEYS.includes(k)){ SY.meta.updated[k] = Date.now(); hit = true; } });
+  if (!hit) return;
+  LS.set('syncMeta', SY.meta); clearTimeout(SY.timer); SY.timer = setTimeout(syncNow, 1500);
+}
+function setSync(state, text){
+  const d = $('#syncDot'); d.className = state || ''; d.title = text || '';
+  const st = $('#syncState'); if (st) st.textContent = text || '';
+}
+async function api(method, a, body, extra){
+  const r = await fetch('/api/sync?a=' + a + (extra || ''), { method, cache:'no-store',
+    headers: Object.assign({'x-family-code': SY.code}, body ? {'Content-Type':'application/json'} : {}), body: body ? JSON.stringify(body) : undefined });
+  if (!r.ok){ const t = await r.text().catch(()=>''); const err = new Error(t || ('HTTP ' + r.status)); err.status = r.status; throw err; }
+  return r;
+}
+async function syncNow(){
+  if (!SY.code) return;
+  if (SY.busy){ SY.again = true; return; }
+  if (!navigator.onLine){ setSync('err', 'Sin conexión: se sincroniza al volver'); return; }
+  SY.busy = true; setSync('busy', 'Sincronizando…');
+  try{
+    for (const id of photoIds()){
+      if (SY.meta.photos[id]) continue;
+      const b = await DB.get(id).catch(()=>null); if (!b) continue;
+      await api('POST', 'photo', {id, data:(await blobToDataURL(b)).split(',')[1], type:b.type || 'image/jpeg'});
+      SY.meta.photos[id] = 1; LS.set('syncMeta', SY.meta);
+    }
+    const remote = (await (await api('GET', 'doc')).json()).doc || {updated:{}, data:{}, photos:{}};
+    const ru = remote.updated || {}; let changed = false, push = false;
+    for (const k of SYNC_KEYS){
+      const lt = SY.meta.updated[k] || 0, rt = ru[k] || 0;
+      if (rt > lt && remote.data && k in remote.data){ S[k] = remote.data[k]; LS.set(k, S[k]); SY.meta.updated[k] = rt; changed = true; }
+      else if (lt > rt) push = true;
+    }
+    const rp = remote.photos || {};
+    for (const id of photoIds()){
+      if (!rp[id] || await DB.get(id).catch(()=>null)) continue;
+      const r = await api('GET', 'photo', null, '&id=' + encodeURIComponent(id));
+      await DB.put(id, await r.blob()); urlCache.delete(id); changed = true;
+    }
+    const allP = Object.assign({}, rp, SY.meta.photos);
+    if (Object.keys(allP).length !== Object.keys(rp).length) push = true;
+    SY.meta.photos = allP;
+    if (push){
+      const doc = {v:1, updated:{}, data:{}, photos:allP};
+      SYNC_KEYS.forEach(k => { const mine = (SY.meta.updated[k]||0) >= (ru[k]||0);
+        doc.updated[k] = Math.max(SY.meta.updated[k]||0, ru[k]||0); doc.data[k] = mine ? S[k] : remote.data[k]; });
+      await api('POST', 'doc', {doc});
+    }
+    LS.set('syncMeta', SY.meta);
+    setSync('ok', 'Sincronizado ' + new Date().toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'}));
+    if (changed){ refreshPeople(); renderAll(); if (!$('#kid').hidden) refreshKid(); }
+  }catch(e){
+    setSync('err', e.status === 503 ? 'Falta activar el almacenamiento en Vercel (Storage → Blob)' : e.status === 401 ? 'Código no válido' : 'No se pudo sincronizar. Lo reintento sola.');
+  }finally{
+    SY.busy = false; if (SY.again){ SY.again = false; setTimeout(syncNow, 500); }
+  }
+}
+const WORDS = ['luna','sol','nube','mar','rio','pino','roca','lago','flor','ola','faro','isla','tigre','oso','delfin','buho','zorro','koala'];
+function newCode(){ const r = n => WORDS[crypto.getRandomValues(new Uint32Array(1))[0] % n];
+  return `${r(WORDS.length)}-${r(WORDS.length)}-${String(crypto.getRandomValues(new Uint32Array(1))[0] % 9000 + 1000)}`; }
+function renderSync(){
+  const box = $('#syncBox');
+  if (SY.code){
+    box.innerHTML = `<p style="margin:0">Código familiar: <b style="font-family:var(--kid);font-size:1.2rem">${esc(SY.code)}</b></p>
+      <p class="hint" id="syncState"></p>
+      <div class="row" style="margin-top:8px"><button class="soft" id="syShare">Enviar código a Nuria</button><button class="soft" id="syNow">Sincronizar ya</button><button class="ghost danger" id="syOff">Desconectar</button></div>`;
+    $('#syShare').onclick = () => { const t = `Código de PictoAgenda: ${SY.code}\nÁbrela en ${location.origin}, Ajustes → "Tengo un código".`;
+      if (navigator.share) navigator.share({text:t}).catch(()=>{}); else { navigator.clipboard && navigator.clipboard.writeText(t); toast('Copiado'); } };
+    $('#syNow').onclick = syncNow;
+    $('#syOff').onclick = () => { if (!confirm('¿Dejar de sincronizar este móvil? Lo guardado se queda aquí.')) return; SY.code = ''; LS.set('syncCode',''); renderSync(); setSync('', ''); };
+  } else {
+    box.innerHTML = `<p class="hint" style="margin-top:0">Con un código familiar, lo que cambiéis en un móvil aparece en el otro: agenda, fotos, personas y rutinas.</p>
+      <div class="row" style="margin-top:8px"><button class="pri" id="syNew">Crear código</button><button class="soft" id="syJoin">Tengo un código</button></div>`;
+    $('#syNew').onclick = () => { SY.code = newCode(); LS.set('syncCode', SY.code); SYNC_KEYS.forEach(k => SY.meta.updated[k] = Date.now()); SY.meta.photos = {}; LS.set('syncMeta', SY.meta); renderSync(); syncNow(); };
+    $('#syJoin').onclick = async () => {
+      const c = (prompt('Escribe el código familiar (ej.: luna-faro-4821)') || '').trim().toLocaleLowerCase('es'); if (c.length < 8) return;
+      SY.code = c; LS.set('syncCode', c); renderSync(); setSync('busy', 'Uniendo los dos móviles…');
+      try{
+        const remote = (await (await api('GET', 'doc')).json()).doc;
+        if (remote && remote.data){
+          // Une lo de los dos móviles: personas y fotos de ambos, rutinas de ambos; la agenda y las pautas del otro móvil
+          S.choices = Object.assign({}, remote.data.choices || {}, S.choices);
+          const names = new Set((remote.data.routines||[]).map(r=>r.name));
+          S.routines = (remote.data.routines||[]).concat(S.routines.filter(r => !names.has(r.name)));
+          if (remote.data.agenda && remote.data.agenda.length) S.agenda = remote.data.agenda;
+          if (remote.data.profile) S.profile = remote.data.profile;
+          SYNC_KEYS.forEach(k => LS.set(k, S[k]));
+        }
+        SY.meta = {updated:{}, photos:{}}; SYNC_KEYS.forEach(k => SY.meta.updated[k] = Date.now()); LS.set('syncMeta', SY.meta);
+        refreshPeople(); renderAll(); syncNow();
+      }catch(e){ setSync('err', e.status === 503 ? 'Falta activar el almacenamiento en Vercel' : 'No se pudo conectar'); }
+    };
+  }
+}
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') syncNow(); });
+setInterval(() => { if (document.visibilityState === 'visible') syncNow(); }, 20000);
+window.addEventListener('online', syncNow);
+
+/* ---------- Pantalla de Miranda ---------- */
+let K = {i:0, res:[], timers:{}, tick:null}, wake = null;
+const kidView = () => (S.settings.late && new Date().getHours() >= 17 && S.settings.view === 'step') ? 'ft' : S.settings.view;
+async function openKid(){
+  if (!S.agenda.length){ toast('Primero crea la agenda'); return; }
+  $('#kid').hidden = false; $('#kParty').hidden = true; $('#board').hidden = true;
+  await refreshKid(true);
+  resolveText('contento').then(r => setImg($('#kFeel img'), r));
+  try{ if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); }catch(e){}
+  try{ if (navigator.wakeLock) wake = await navigator.wakeLock.request('screen'); }catch(e){}
+  announce();
+}
+async function refreshKid(reset){
+  K.res = await Promise.all(S.agenda.map(resOfStep));
+  if (reset || K.i >= S.agenda.length){ K.i = S.agenda.findIndex(s => !s.done); if (K.i < 0) K.i = Math.max(0, S.agenda.length - 1); }
+  renderKid();
+}
+function closeKid(){
+  $('#kid').hidden = true; if ('speechSynthesis' in window) speechSynthesis.cancel();
+  clearInterval(K.tick); K.tick = null; clearInterval(B.tick);
+  try{ if (document.fullscreenElement) document.exitFullscreen(); }catch(e){}
+  try{ wake && wake.release(); }catch(e){} wake = null;
+  renderSteps();
+}
+function cardHTML(st, r, big){
+  return `<div class="kcard ${st.cancelled ? 'cancel' : ''}"><img alt="" src="${LOAD}">${peopleHTML(st.people)}${big && st.min && !st.done && !st.cancelled ? ringHTML() : ''}</div>
+    <div class="kword syl ${st.cancelled ? 'cancel' : ''}">${sylHTML(labelOf(r, st))}</div>`;
+}
+function ringHTML(){ return `<button class="ring" id="kRing" aria-label="Temporizador"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="40"/><circle class="fg" cx="50" cy="50" r="40" stroke-dasharray="251.3" stroke-dashoffset="0"/></svg><b></b></button>`; }
+function fillCard(box, st, r){
+  setImg(box.querySelector('.kcard>img'), r); fillPeople(box, st.people);
+  const w = box.querySelector('.kword'); const lbl = labelOf(r, st);
+  const talk = () => { speakLabel(lbl, w); sayExtra(st); };
+  w.onclick = talk; box.querySelector('.kcard>img').onclick = talk;
+}
+function whyHTML(st){ const ws = reasonWords(st.reason); return st.reason ? `<div class="why">${ws.map(() => `<img alt="" src="${LOAD}">`).join('')}<div class="syl">${sylHTML(st.reason)}</div></div>` : ''; }
+function fillWhy(box, st){ const ws = reasonWords(st.reason); box.querySelectorAll('.why img').forEach((im,k) => resolveText(ws[k]).then(r => setImg(im, r))); }
+function renderKid(){
+  if (!S.agenda.length){ closeKid(); return; }
+  const strip = $('#kStrip'); strip.innerHTML = '';
+  S.agenda.forEach((st, i) => {
+    const d = document.createElement('button');
+    d.className = 'mini' + (st.done ? ' done' : '') + (i===K.i ? ' cur' : '') + (st.cancelled ? ' cancel' : '') + (st.time ? ' t' : '');
+    d.setAttribute('aria-label', st.text);
+    const im = document.createElement('img'); im.alt = ''; d.appendChild(im); setImg(im, K.res[i]);
+    d.onclick = () => { K.i = i; renderKid(); announce(); }; strip.appendChild(d);
+  });
+  const cur = strip.children[K.i]; cur && cur.scrollIntoView({inline:'center', block:'nearest'});
+  const st = S.agenda[K.i], r = K.res[K.i], main = $('#kMain'), view = kidView();
+  main.className = st.time ? 't' : '';
+  let html = '';
+  if (st.change && !st.done) html += `<div id="kChange"><img alt="" src="${LOAD}"><span class="syl">${sylHTML('cambio')}</span></div>`;
+  if (view === 'list'){
+    html += `<div class="klist">${S.agenda.map((s,i) => `<div class="krow ${i===K.i ? 'cur' : ''} ${s.done ? 'done' : ''} ${s.time ? 't' : ''} ${s.cancelled ? 'cancel' : ''}" data-i="${i}"><img alt="" src="${LOAD}"><div class="syl">${s.options ? s.options.map(sylHTML).join(' o ') : sylHTML(labelOf(K.res[i], s))}</div></div>`).join('')}</div>`;
+  } else if (st.options && !st.done){
+    html += `<div id="kOpts">${st.options.map((o,k) => `<button class="opt" data-k="${k}"><img alt="" src="${LOAD}"><div class="syl">${sylHTML(o)}</div></button>`).join('')}</div>`;
+  } else if (view === 'ft'){
+    const n = nextIdx(K.i);
+    html += `<div class="ft"><div class="col now">${cardHTML(st, r, true)}</div>
+      <svg class="arrow" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8.5 4.5 17 12l-8.5 7.5z"/></svg>
+      <div class="col then">${n >= 0 ? cardHTML(S.agenda[n], K.res[n], false) : ''}</div></div>`;
+  } else {
+    html += cardHTML(st, r, true);
+  }
+  if (view !== 'list' && st.cancelled) html += whyHTML(st);
+  if (view !== 'list' && st.subs && st.subs.length && !st.done) html += `<div class="subs">${st.subs.map((s,k) => `<button class="sub ${(st.subsDone||[]).includes(k) ? 'ok' : ''}" data-k="${k}" aria-label="${esc(s)}"><img alt="" src="${LOAD}"></button>`).join('')}</div>`;
+  main.innerHTML = html;
+  // rellenar imágenes
+  const ch = $('#kChange'); if (ch) resolveText('cambio').then(x => setImg(ch.querySelector('img'), x));
+  if (view === 'list') main.querySelectorAll('.krow').forEach(row => { const i = +row.dataset.i; setImg(row.querySelector('img'), K.res[i]); row.onclick = () => { K.i = i; renderKid(); announce(); }; });
+  else if (st.options && !st.done) main.querySelectorAll('.opt').forEach((b,k) => resolveText(st.options[k]).then(x => { setImg(b.querySelector('img'), x); b.querySelector('.syl').innerHTML = sylHTML(labelOf(x, {text:st.options[k]})); }));
+  else if (view === 'ft'){ fillCard(main.querySelector('.col.now'), st, r); const n = nextIdx(K.i); if (n >= 0) fillCard(main.querySelector('.col.then'), S.agenda[n], K.res[n]); }
+  else fillCard(main, st, r);
+  if (st.cancelled) fillWhy(main, st);
+  main.querySelectorAll('.sub').forEach(b => { const k = +b.dataset.k; resolveText(st.subs[k]).then(x => setImg(b.querySelector('img'), x));
+    b.onclick = () => { st.subsDone = st.subsDone || []; if (!st.subsDone.includes(k)) st.subsDone.push(k); else st.subsDone = st.subsDone.filter(x=>x!==k); save('agenda'); b.classList.toggle('ok'); speakLabel(st.subs[k]); }; });
+  // pie: mirar lo siguiente
+  const n = nextIdx(K.i), peek = $('#kPeek');
+  peek.innerHTML = view === 'step' && n >= 0 ? `<img alt="" src="${LOAD}">` : '';
+  if (peek.firstChild) setImg(peek.firstChild, K.res[n]);
+  $('#kPrev').disabled = K.i === 0;
+  $('#kNext').disabled = !!(st.options && !st.done);
+  startTimer(st);
+}
+function nextIdx(i){ for (let j = i+1; j < S.agenda.length; j++) if (!S.agenda[j].done) return j; return -1; }
+function sayExtra(st){
+  if (!('speechSynthesis' in window)) return;
+  if (st.people && st.people.length) say('con ' + joinY(st.people));
+  if (st.cancelled) say('No hay.' + (st.reason ? ' ' + st.reason : ''), 0.85);
+}
+function announce(){
+  const st = S.agenda[K.i]; if (!st || !('speechSynthesis' in window)) return;
+  speechSynthesis.cancel();
+  if (st.change && !st.changeSeen){ say('Cambio', 0.8); st.changeSeen = true; save('agenda'); }
+  if (st.options && !st.done){ say(st.options.join(', o, '), 0.8); return; }
+  const w = document.querySelector('#kMain .kword') || document.querySelector('#kMain .krow.cur .syl');
+  speakLabel(labelOf(K.res[K.i], st), w, true); sayExtra(st);
+}
+$('#kMain').addEventListener('click', async e => {
+  const b = e.target.closest('.opt'); if (!b || !$('#board').hidden) return;
+  const st = S.agenda[K.i], o = st.options[+b.dataset.k];
+  st.chosenFrom = st.options; delete st.options; st.text = o; save('agenda');
+  if (navigator.vibrate) navigator.vibrate(40);
+  K.res[K.i] = await resolve(st); renderKid(); speakLabel(labelOf(K.res[K.i], st), document.querySelector('#kMain .kword'));
+});
+$('#kNext').onclick = () => {
+  const st = S.agenda[K.i]; if (!st) return;
+  if (!st.done){ st.done = true; save('agenda'); }
+  if (navigator.vibrate) navigator.vibrate(40);
+  const n = nextIdx(K.i);
+  if (n < 0 && S.agenda.every(s => s.done)){ renderKid(); $('#kParty').hidden = false; if ('speechSynthesis' in window){ speechSynthesis.cancel(); say('¡Muy bien!', 0.9); } return; }
+  K.i = n < 0 ? Math.min(K.i + 1, S.agenda.length - 1) : n;
+  renderKid(); announce();
+};
+$('#kPrev').onclick = () => {
+  if (K.i === 0) return;
+  K.i -= 1; S.agenda[K.i].done = false; save('agenda');
+  renderKid(); announce();
+};
+$('#kParty').onclick = () => { $('#kParty').hidden = true; };
+// Temporizador por actividad: arranca solo, se pausa tocándolo, avisa con un sonido suave
+function startTimer(st){
+  clearInterval(K.tick); K.tick = null;
+  const ring = $('#kRing'); if (!ring || !st.min) return;
+  const T = K.timers[st.uid] = K.timers[st.uid] || {left: st.min * 60, run: true, rang: false};
+  const draw = () => {
+    const tot = st.min * 60, f = Math.max(0, T.left) / tot;
+    ring.querySelector('.fg').style.strokeDashoffset = String(251.3 * (1 - f));
+    ring.querySelector('b').textContent = T.left > 0 ? (T.left >= 60 ? Math.ceil(T.left/60) + '′' : T.left + '″') : '✓';
+    ring.classList.toggle('end', T.left <= 0);
+  };
+  draw();
+  ring.onclick = () => { T.run = !T.run; ring.style.opacity = T.run ? 1 : .55; };
+  K.tick = setInterval(() => { if (!T.run || T.left <= 0) return; T.left -= 1; draw();
+    if (T.left <= 0 && !T.rang){ T.rang = true; chime(); say('Se acabó el tiempo', 0.85); } }, 1000);
+}
+// Salir: mantener pulsado el candado 1,5 s
+(() => {
+  const b = $('#kLock'); let t = null;
+  const start = e => { e.preventDefault(); b.classList.add('hold'); t = setTimeout(() => { b.classList.remove('hold'); closeKid(); }, 1500); };
+  const stop = () => { b.classList.remove('hold'); if (t){ clearTimeout(t); t = null; } };
+  b.addEventListener('pointerdown', start); ['pointerup','pointerleave','pointercancel'].forEach(ev => b.addEventListener(ev, stop));
+  b.addEventListener('contextmenu', e => e.preventDefault());
+})();
+$('#btnKid').onclick = openKid;
+
+/* ---------- Tableros: esperar y cómo me siento ---------- */
+let B = {tick:null, standalone:false};
+function openBoard(standalone){
+  B.standalone = standalone;
+  if (standalone){ $('#kid').hidden = false; $('#kParty').hidden = true; $('#kMain').innerHTML = ''; $('#kStrip').innerHTML = '';
+    try{ if (navigator.wakeLock) navigator.wakeLock.request('screen').then(w => wake = w).catch(()=>{}); }catch(e){} }
+  $('#board').hidden = false;
+}
+function closeBoard(){
+  clearInterval(B.tick); $('#board').hidden = true; if ('speechSynthesis' in window) speechSynthesis.cancel();
+  if (B.standalone || !S.agenda.length) closeKid();
+}
+$('#bBack').onclick = closeBoard;
+// Esperar
+const WMINS = [1, 2, 5, 10, 15, 20, 30];
+let W = {min:5};
+$('#toolWait').onclick = () => {
+  const last = LS.get('wait', {what:'', min:5, doing:'cuento, puzle, pintar, música'});
+  W.min = last.min; $('#wWhat').value = last.what; $('#wDo').value = last.doing; renderWMins(); $('#waitSheet').hidden = false;
+};
+function renderWMins(){ $('#wMin').innerHTML = WMINS.map(m => `<button class="chip ${W.min===m ? 'on' : ''}" data-m="${m}">${m} min</button>`).join(''); }
+$('#wMin').onclick = e => { const b = e.target.closest('[data-m]'); if (b){ W.min = +b.dataset.m; renderWMins(); } };
+$('#wCancel').onclick = () => { $('#waitSheet').hidden = true; };
+$('#wGo').onclick = () => {
+  const cfg = {what: $('#wWhat').value.trim(), min: W.min, doing: $('#wDo').value.trim()};
+  LS.set('wait', cfg); $('#waitSheet').hidden = true; startWait(cfg, $('#kid').hidden);
+};
+function startWait(cfg, standalone){
+  openBoard(standalone);
+  const head = $('#bHead'), body = $('#bBody');
+  const word = cfg.what ? 'esperar a ' + cfg.what.replace(/^(?:a|al)\s+/i, '') : 'esperar';
+  head.innerHTML = `<img alt="" src="${LOAD}"><div class="syl">${sylHTML(word)}</div>`;
+  resolveText('esperar').then(r => setImg(head.querySelector('img'), r));
+  const acts = cfg.doing.split(',').map(s=>s.trim()).filter(Boolean).slice(0,6);
+  body.innerHTML = `<div class="bigring"><svg viewBox="0 0 100 100"><circle class="bg" cx="50" cy="50" r="42"/><circle class="fg" cx="50" cy="50" r="42" stroke-dasharray="263.9" stroke-dashoffset="0"/></svg><b></b></div>
+    ${acts.length ? `<div class="bgrid">${acts.map((a,k) => `<button class="opt" data-k="${k}"><img alt="" src="${LOAD}"><div class="syl">${sylHTML(a)}</div></button>`).join('')}</div>` : ''}`;
+  body.querySelectorAll('.opt').forEach((b,k) => { resolveText(acts[k]).then(r => setImg(b.querySelector('img'), r));
+    b.onclick = () => { body.querySelectorAll('.opt').forEach(x => x.classList.toggle('on', x===b)); speakLabel(acts[k], b.querySelector('.syl')); }; });
+  say(word, 0.8);
+  let left = cfg.min * 60; const tot = left, ring = body.querySelector('.bigring');
+  const draw = () => { ring.querySelector('.fg').style.strokeDashoffset = String(263.9 * (1 - Math.max(0,left)/tot));
+    ring.querySelector('b').textContent = left > 0 ? (left >= 60 ? Math.ceil(left/60) + ' min' : left + ' s') : '¡Ya!'; ring.classList.toggle('end', left <= 0); };
+  draw(); clearInterval(B.tick);
+  B.tick = setInterval(() => { left -= 1; draw(); if (left === 0){ chime(); say('Ya está. Se acabó la espera', 0.85); } if (left < 0) clearInterval(B.tick); }, 1000);
+}
+// Cómo me siento (con cuánto: un poco, bastante, mucho)
+const FEELINGS = ['contenta','triste','enfadada','cansada','asustada','nerviosa'];
+function openFeel(standalone){
+  openBoard(standalone);
+  const head = $('#bHead'), body = $('#bBody');
+  head.innerHTML = `<div class="syl">${sylHTML('¿cómo estás?'.replace(/[¿?]/g,''))}</div>`;
+  body.innerHTML = `<div class="bgrid">${FEELINGS.map((f,k) => `<button class="opt" data-k="${k}"><img alt="" src="${LOAD}"><div class="syl">${sylHTML(f)}</div></button>`).join('')}</div><div id="fScale"></div>`;
+  say('¿Cómo estás?', 0.85);
+  body.querySelectorAll('.opt').forEach((b,k) => { resolveText(FEELINGS[k]).then(r => setImg(b.querySelector('img'), r));
+    b.onclick = () => {
+      body.querySelectorAll('.opt').forEach(x => x.classList.toggle('on', x===b));
+      if ('speechSynthesis' in window) speechSynthesis.cancel(); say('Estoy ' + FEELINGS[k], 0.85);
+      const sc = $('#fScale'), lv = ['un poco','bastante','mucho'];
+      sc.innerHTML = `<div class="scale">${lv.map((l,i) => `<button data-l="${i}" aria-label="${l}" style="width:${54+i*26}px;height:${54+i*26}px"></button>`).join('')}</div>`;
+      sc.querySelectorAll('button').forEach(x => x.onclick = () => { sc.querySelectorAll('button').forEach((y,j) => y.classList.toggle('on', j <= +x.dataset.l)); say(lv[+x.dataset.l], 0.85); });
+    }; });
+}
+$('#toolFeel').onclick = () => openFeel(true);
+$('#kFeel').onclick = () => openFeel(false);
+resolveText('esperar').then(r => setImg($('#icoWait'), r));
+resolveText('contento').then(r => setImg($('#icoFeel'), r));
+
+/* ---------- Arranque ---------- */
+const APP_VERSION = 'Versión 5 (27/11/2026)';
+function renderToday(){
+  const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
+  $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';
+}
+function renderAll(){ refreshPeople(); renderSteps(); renderChoices(); renderRoutines(); renderNotes(); renderSync(); $('#ver').textContent = APP_VERSION; }
+renderToday(); renderAll();
+if (SY.code) syncNow();
+try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
+if ('serviceWorker' in navigator && location.protocol === 'https:'){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 
 /* ---------- Voz: pulsar y hablar, como un audio de WhatsApp ----------
    1) Si el navegador trae dictado propio (Chrome, Safari), se usa.
@@ -698,7 +1419,7 @@ const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
 const ASR_LIB = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2';
 const ASR_MODEL = 'Xenova/whisper-base';
 const MIC = $('#mic'), HINT = $('#micHint');
-const HINT_IDLE = 'Mantén pulsado 🎤 y habla (o tócalo una vez para empezar y otra para terminar). Separa con "luego", "después" o "y".';
+const HINT_IDLE = 'Mantén pulsado el micrófono mientras hablas, o tócalo una vez para empezar y otra para terminar.';
 HINT.textContent = HINT_IDLE;
 let V = {state:'idle', engine:null, pressT:0, timer:null, sr:null, srText:'', rec:null, stream:null, chunks:[]};
 let asrP = null;
@@ -707,7 +1428,7 @@ const useWhisper = () => S.settings.whisper || !SR;
 function setMic(state, hint){
   V.state = state;
   MIC.classList.toggle('rec', state==='rec');
-  MIC.textContent = state==='rec' ? '⏺' : state==='busy' ? '⏳' : '🎤';
+  MIC.classList.toggle('busy', state==='busy');
   HINT.textContent = hint || HINT_IDLE;
 }
 function loadASR(){
@@ -811,303 +1532,10 @@ MIC.addEventListener('pointerdown', e => {
 MIC.addEventListener('contextmenu', e => e.preventDefault());
 $('#btnNew').onclick = () => {
   $('#txt').value = ''; S.agenda = []; save('agenda'); renderSteps();
-  toast('Listo para dictar otra vez 🎤'); window.scrollTo({top:0, behavior:'smooth'});
+  toast('Agenda vacía. Ya puedes dictar.'); window.scrollTo({top:0, behavior:'smooth'});
 };
 
-/* ---------- Editor de pictograma / foto ---------- */
-let ED = null;
-function trigText(arr){ return (arr||[]).map(t=>t.join(' ')).join(', '); }
-function parseTrig(s){ return s.split(',').map(x=>keyWords(x)).filter(t=>t.length); }
-async function openEditor(o){
-  const step = o.stepUid ? S.agenda.find(s=>s.uid===o.stepUid) : null;
-  let base = null, cid = o.cid || null;
-  if (step){
-    const r = resolveSync(step);
-    if (r && r.src==='guardado') cid = r.cid;
-    base = r;
-  } else if (cid) base = S.choices[cid];
-  else if (o.phrase){ cid = matchChoice(S.choices, keyWords(o.phrase)); if (cid) base = S.choices[cid]; }
-  if (base && base.type==='query'){ const qid = queryId(base); base = Object.assign({}, base, qid ? {type:'picto', id:qid} : {type:'none'}); }
-  const isTime = !!(step && step.time);
-  const phrase = step ? step.text : (o.phrase || '');
-  ED = { step, cid, sel: base && base.type!=='none' ? {type:base.type, id:base.id, photo:base.photo} : null, blob:null };
-  $('#edPhrase').textContent = step ? `Dijiste: "${phrase}"` : (cid ? 'Elección guardada' : 'Nueva elección');
-  $('#edLabel').value = (base && base.label) || phrase;
-  $('#edTrig').value = cid ? trigText(S.choices[cid].triggers) : keyWords(phrase).join(' ');
-  $('#edMaps').value = (base && base.maps) || '';
-  $('#edRemember').checked = !(step && step.override);
-  $('#edRemember').parentElement.hidden = !step;
-  $('#edDelRow').hidden = !cid;
-  $('#edQ').value = isTime ? timeOf(step).q : (keyWords(phrase).slice(-1)[0] || phrase);
-  $('#edTrigBox').hidden = isTime; $('#edPersonRow').hidden = isTime;
-  $('#edPerson').checked = !!((base && base.person) || o.person);
-  $('#edWhoBox').hidden = !step || isTime; $('#edWho').value = step && step.people ? step.people.join(', ') : '';
-  tab((ED.sel && ED.sel.type==='photo') || (o.person && !ED.sel) ? 'F' : 'P');
-  refreshPreview();
-  $('#ed').hidden = false;
-  if ($('#edQ').value) doSearch();
-}
-function refreshPreview(){
-  const lbl = $('#edLabel').value.trim() || '…';
-  $('#edSyl').innerHTML = sylHTML(lbl);
-  const img = $('#edPrev');
-  if (ED.blob){ img.classList.add('photo'); img.src = URL.createObjectURL(ED.blob); }
-  else setImg(img, ED.sel);
-}
-$('#edLabel').addEventListener('input', refreshPreview);
-function tab(w){ $('#tabPicto').classList.toggle('on', w==='P'); $('#tabPhoto').classList.toggle('on', w==='F'); $('#paneP').hidden = w!=='P'; $('#paneF').hidden = w!=='F'; }
-$('#tabPicto').onclick = () => tab('P');
-$('#tabPhoto').onclick = () => tab('F');
-async function doSearch(){
-  const q = $('#edQ').value.trim(); if (!q) return;
-  const g = $('#edGrid'); g.innerHTML = '<p class="hint">Buscando…</p>';
-  const ids = await arasaacSearch(q);
-  if (!ids.length){ g.innerHTML = '<p class="hint">Sin resultados. Prueba otra palabra (o revisa la conexión).</p>'; return; }
-  g.innerHTML = ids.map(id => `<img loading="lazy" data-id="${id}" src="${IMG(id).replace('_500','_300')}" class="${ED.sel && ED.sel.id===id ? 'sel' : ''}" alt="">`).join('');
-}
-$('#edSearch').onclick = doSearch;
-$('#edQ').addEventListener('keydown', e => { if (e.key==='Enter') doSearch(); });
-$('#edGrid').addEventListener('click', e => {
-  const im = e.target.closest('img[data-id]'); if (!im) return;
-  ED.sel = {type:'picto', id: +im.dataset.id}; ED.blob = null;
-  $('#edGrid').querySelectorAll('img').forEach(x => x.classList.toggle('sel', x===im));
-  refreshPreview();
-});
-$('#edPick').onclick = () => $('#edFile').click();
-$('#edCam').onclick = () => $('#edCamFile').click();
-async function onFile(e){
-  const f = e.target.files && e.target.files[0]; e.target.value = ''; if (!f) return;
-  try{ ED.blob = await resizeImage(f); ED.sel = {type:'photo'}; refreshPreview(); }
-  catch(err){ toast(err.message); }
-}
-$('#edFile').onchange = onFile; $('#edCamFile').onchange = onFile;
-$('#edMapsFind').onclick = () => {
-  const q = $('#edMaps').value.trim() || $('#edLabel').value.trim();
-  if (q) openMaps(q);
-  toast('En Maps: elige el sitio, pulsa Compartir, copia el enlace y pégalo aquí');
-};
-$('#edCancel').onclick = () => { $('#ed').hidden = true; ED = null; };
-$('#ed').addEventListener('click', e => { if (e.target.id==='ed') $('#edCancel').click(); });
-$('#edSave').onclick = async () => {
-  if (!ED.sel){ toast('Elige un pictograma o una foto'); return; }
-  const choice = { type: ED.sel.type, label: $('#edLabel').value.trim() || (ED.step ? ED.step.text : ''), maps: $('#edMaps').value.trim() };
-  if (ED.sel.type==='photo'){
-    if (ED.blob){ const pid = 'ph_' + uid(); try{ await DB.put(pid, ED.blob); }catch(err){ toast('No se pudo guardar la foto'); return; } choice.photo = pid; }
-    else choice.photo = ED.sel.photo;
-  } else choice.id = ED.sel.id;
-  if (!choice.label){ toast('Escribe la palabra'); return; }
-  const isTime = !!(ED.step && ED.step.time);
-  if (ED.step && !isTime){ const who = $('#edWho').value.split(',').map(s=>s.trim()).filter(Boolean); if (who.length) ED.step.people = who; else delete ED.step.people; }
-  if (!isTime && $('#edPerson').checked) choice.person = true;
-  const remember = !ED.step || $('#edRemember').checked;
-  if (remember){
-    let trig = isTime ? [['__t' + ED.step.time]] : parseTrig($('#edTrig').value);
-    if (!trig.length) trig = [keyWords(choice.label)];
-    choice.triggers = trig; if (isTime) choice.time = true;
-    const id = ED.cid || ('c_' + uid());
-    S.choices[id] = choice;
-    if (ED.step) delete ED.step.override;
-    save('choices');
-  } else if (ED.step){
-    ED.step.override = choice;
-  }
-  save('agenda'); refreshPeople();
-  $('#ed').hidden = true; ED = null;
-  renderSteps(); renderChoices(); toast('Guardado');
-};
-$('#edDelete').onclick = () => {
-  if (!ED.cid || !confirm('¿Borrar esta elección?')) return;
-  const c = S.choices[ED.cid];
-  if (c && c.type==='photo' && c.photo) DB.del(c.photo).catch(()=>{});
-  delete S.choices[ED.cid]; save('choices');
-  $('#ed').hidden = true; ED = null; renderSteps(); renderChoices();
-};
 
-/* ---------- Mis elecciones ---------- */
-function renderChoices(){
-  const box = $('#choices'); const ids = Object.keys(S.choices);
-  if (!ids.length){ box.innerHTML = '<p class="hint">Aún no hay elecciones guardadas.</p>'; return; }
-  ids.sort((a,b) => S.choices[a].label.localeCompare(S.choices[b].label, 'es'));
-  box.innerHTML = ids.map(id => { const c = S.choices[id]; return `<div class="list-item" data-id="${id}">
-    <img class="thumb" alt="" src="${LOAD}"><div class="grow"><div class="syl">${sylHTML(c.label)}</div>
-    <div class="small hint" style="margin:0">${c.time ? '🕒 momento del día' : (c.person ? '👤 persona · ' : '') + 'Se activa con: ' + esc(trigText(c.triggers))}${c.maps ? ' · 📍' : ''}</div></div>
-    <button data-a="edit">✏️</button></div>`; }).join('');
-  box.querySelectorAll('.list-item').forEach(el => resolveChoice(S.choices[el.dataset.id]).then(r => setImg(el.querySelector('img'), r)));
-}
-$('#choices').addEventListener('click', e => { const b = e.target.closest('button[data-a="edit"]'); if (b) openEditor({cid: b.closest('.list-item').dataset.id}); });
-$('#btnNewPerson').onclick = () => {
-  const p = prompt('¿Quién es? (ej.: papá, mamá, abuela Gloria, Loli)'); if (!p || !p.trim()) return;
-  openEditor({phrase: p.trim().toLocaleLowerCase('es'), person: true});
-};
-$('#btnNewChoice').onclick = () => {
-  const p = prompt('¿Qué palabra o lugar? (ej.: hamburguesa, casa de la abuela)'); if (!p || !p.trim()) return;
-  openEditor({phrase: cleanChunk(p.trim())});
-};
-
-/* ---------- Rutinas ---------- */
-function renderRoutines(){
-  const box = $('#routines');
-  if (!S.routines.length){ box.innerHTML = '<p class="hint" style="margin:0">Guarda una agenda (ej.: "Mañana de cole") para cargarla en un toque.</p>'; return; }
-  box.innerHTML = S.routines.map((r,i) => `<div class="list-item"><div class="grow"><b>${esc(r.name)}</b><div class="small hint" style="margin:0">${esc(r.steps.map(s=>s.text).join(' → '))}</div></div>
-    <button data-a="load" data-i="${i}">Cargar</button><button data-a="del" data-i="${i}" class="ghost">✕</button></div>`).join('');
-}
-$('#routines').addEventListener('click', e => {
-  const b = e.target.closest('button[data-a]'); if (!b) return; const i = +b.dataset.i;
-  if (b.dataset.a==='load'){ S.agenda = S.routines[i].steps.map(s => Object.assign({}, s, {uid:uid(), done:false})); save('agenda'); renderSteps(); toast('Rutina cargada'); window.scrollTo({top:0, behavior:'smooth'}); }
-  else if (confirm(`¿Borrar la rutina "${S.routines[i].name}"?`)){ S.routines.splice(i,1); save('routines'); renderRoutines(); }
-});
-$('#btnSaveRoutine').onclick = () => {
-  if (!S.agenda.length){ toast('La agenda está vacía'); return; }
-  const n = prompt('Nombre de la rutina (ej.: Mañana de cole)'); if (!n || !n.trim()) return;
-  S.routines.push({name:n.trim(), steps:S.agenda.map(s => { const o = s.options || s.chosenFrom; return o ? {text:o.join(' o '), options:o, people:s.people} : {text:s.text, override:s.override, people:s.people, time:s.time}; })}); save('routines'); renderRoutines(); toast('Rutina guardada');
-};
-
-/* ---------- Ajustes, exportar, importar ---------- */
-[['#setCaps','caps'],['#setDash','dash'],['#setSpeak','speak'],['#setLate','late'],['#setWhisper','whisper']].forEach(([sel,k]) => {
-  $(sel).checked = !!S.settings[k];
-  $(sel).onchange = () => { S.settings[k] = $(sel).checked; save('settings'); renderSteps(); renderChoices(); };
-});
-const blobToDataURL = b => new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(b); });
-async function dataURLToBlob(d){ return (await fetch(d)).blob(); }
-async function shareFile(file){
-  if (navigator.canShare && navigator.canShare({files:[file]})){
-    try{ await navigator.share({files:[file], title:file.name}); return; }catch(e){ if (e.name==='AbortError') return; }
-  }
-  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = file.name; a.click();
-}
-$('#btnExport').onclick = async () => {
-  const photos = {}; const ids = new Set();
-  Object.values(S.choices).forEach(c => c.photo && ids.add(c.photo));
-  S.routines.forEach(r => r.steps.forEach(s => s.override && s.override.photo && ids.add(s.override.photo)));
-  for (const id of ids){ const b = await DB.get(id).catch(()=>null); if (b) photos[id] = await blobToDataURL(b); }
-  const data = JSON.stringify({app:'pictoagenda', v:2, choices:S.choices, routines:S.routines, profile:S.profile, photos});
-  shareFile(new File([data], 'pictoagenda.json', {type:'application/json'}));
-};
-$('#btnImport').onclick = () => $('#importFile').click();
-const union = (a, b) => [...new Set([...(a||[]), ...(b||[])])];
-$('#importFile').onchange = async e => {
-  const f = e.target.files[0]; e.target.value = ''; if (!f) return;
-  try{
-    const d = JSON.parse(await f.text()); if (d.app!=='pictoagenda') throw new Error();
-    for (const [id, url] of Object.entries(d.photos||{})) await DB.put(id, await dataURLToBlob(url));
-    Object.assign(S.choices, d.choices||{});
-    const names = new Set(S.routines.map(r=>r.name));
-    (d.routines||[]).forEach(r => { if (!names.has(r.name)) S.routines.push(r); });
-    if (d.profile){
-      const p = d.profile, q = S.profile;
-      if (p.replaceDefaults){ if (p.notes) q.notes = p.notes.slice(); }
-      else q.notes = union(q.notes, p.notes);
-    }
-    save('choices','routines','profile'); renderAll(); toast('Importado ✔');
-  }catch(err){ toast('Ese archivo no es de PictoAgenda'); }
-};
-
-/* ---------- Pautas ---------- */
-function renderNotes(){ $('#notes').innerHTML = S.profile.notes.map(n => `<li>${esc(n)}</li>`).join('') || '<li class="hint">Sin pautas todavía</li>'; }
-function listEditor(btn, ta, view, key, label, render){
-  $(btn).onclick = () => {
-    if ($(ta).hidden){ $(ta).value = S.profile[key].join('\n'); $(ta).hidden = false; $(view).hidden = true; $(btn).textContent = '💾 Guardar'; }
-    else { S.profile[key] = $(ta).value.split('\n').map(s=>s.trim()).filter(Boolean); save('profile'); $(ta).hidden = true; $(view).hidden = false; $(btn).textContent = label; render(); }
-  };
-}
-listEditor('#btnNotes', '#notesEd', '#notes', 'notes', '✏️ Editar pautas', renderNotes);
-
-/* ---------- Modo niña ---------- */
-let K = {i:0, res:[]}, wake = null;
-const resOf = st => st.options ? resolveText(st.options[0]) : resolve(st);
-const simpleMode = () => S.settings.late && new Date().getHours() >= 17;
-async function openKid(){
-  if (!S.agenda.length){ toast('Primero crea la agenda'); return; }
-  K.res = await Promise.all(S.agenda.map(resOf));
-  K.i = S.agenda.findIndex(s => !s.done); if (K.i < 0) K.i = 0;
-  $('#kid').hidden = false; $('#kidParty').hidden = true;
-  try{ if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); }catch(e){}
-  try{ if (navigator.wakeLock) wake = await navigator.wakeLock.request('screen'); }catch(e){}
-  renderKid(); announce();
-}
-function closeKid(){
-  $('#kid').hidden = true; if ('speechSynthesis' in window) speechSynthesis.cancel();
-  try{ if (document.fullscreenElement) document.exitFullscreen(); }catch(e){}
-  try{ wake && wake.release(); }catch(e){} wake = null;
-  renderSteps();
-}
-function renderKid(){
-  const strip = $('#kidStrip'); strip.innerHTML = ''; strip.style.visibility = simpleMode() ? 'hidden' : 'visible';
-  S.agenda.forEach((st, i) => {
-    const d = document.createElement('div'); d.className = 'mini' + (st.done ? ' done' : '') + (i===K.i ? ' cur' : '');
-    const im = document.createElement('img'); d.appendChild(im); setImg(im, K.res[i]);
-    d.onclick = () => { K.i = i; renderKid(); }; strip.appendChild(d);
-  });
-  const cur = strip.children[K.i]; cur && cur.scrollIntoView({inline:'center', block:'nearest'});
-  const st = S.agenda[K.i], r = K.res[K.i];
-  $('#kidMain').classList.toggle('tmode', !!st.time);
-  const ch = $('#kidChange'); ch.hidden = !(st.change && !st.done);
-  if (!ch.hidden){ ch.querySelector('.syl').innerHTML = sylHTML('cambio'); resolveText('cambio').then(x => setImg(ch.querySelector('img'), x)); }
-  const opts = $('#kidOpts');
-  if (st.options && !st.done){
-    opts.hidden = false; $('#kidPic').hidden = $('#kidWord').hidden = true; $('#kidDone').style.visibility = 'hidden';
-    opts.innerHTML = st.options.map((o,k) => `<button class="opt" data-k="${k}"><img alt="" src="${LOAD}"><div class="syl">${sylHTML(o)}</div></button>`).join('');
-    opts.querySelectorAll('.opt').forEach((b,k) => resolveText(st.options[k]).then(x => { setImg(b.querySelector('img'), x); b.querySelector('.syl').innerHTML = sylHTML(labelOf(x, {text:st.options[k]})); }));
-  } else {
-    opts.hidden = true; $('#kidPic').hidden = $('#kidWord').hidden = false;
-    const lbl = labelOf(r, st);
-    setImg($('#kidImg'), r);
-    $('#kidPpl').innerHTML = (st.people||[]).map(() => `<img alt="" src="${LOAD}">`).join('');
-    $('#kidPpl').querySelectorAll('img').forEach((im,k) => resolveText(st.people[k]).then(x => setImg(im, x)));
-    $('#kidWord').innerHTML = sylHTML(lbl);
-    $('#kidWord').onclick = $('#kidImg').onclick = () => { speakLabel(lbl, $('#kidWord')); sayPeople(st); };
-    $('#kidDone').style.visibility = st.done ? 'hidden' : 'visible';
-  }
-  let n = -1; for (let j = K.i+1; j < S.agenda.length; j++) if (!S.agenda[j].done){ n = j; break; }
-  $('#kidNext').style.visibility = n >= 0 ? 'visible' : 'hidden';
-  if (n >= 0) setImg($('#kidNextImg'), K.res[n]);
-}
-function announce(){
-  const st = S.agenda[K.i]; if (!st || st.done || !('speechSynthesis' in window)) return;
-  speechSynthesis.cancel();
-  if (st.change && !st.changeSeen){ say('Cambio', 0.8); st.changeSeen = true; save('agenda'); }
-  if (st.options) say(st.options.join(', o, '), 0.8);
-  else { speakLabel(labelOf(K.res[K.i], st), $('#kidWord'), true); sayPeople(st); }
-}
-function sayPeople(st){ if (st.people && st.people.length && 'speechSynthesis' in window) say('con ' + joinY(st.people), 0.85); }
-$('#kidOpts').addEventListener('click', async e => {
-  const b = e.target.closest('.opt'); if (!b) return;
-  const st = S.agenda[K.i], o = st.options[+b.dataset.k];
-  st.chosenFrom = st.options; delete st.options; st.text = o; save('agenda');
-  if (navigator.vibrate) navigator.vibrate(40);
-  K.res[K.i] = await resolve(st); renderKid(); speakLabel(labelOf(K.res[K.i], st), $('#kidWord'));
-});
-$('#kidDone').onclick = e => {
-  const st = S.agenda[K.i]; if (!st || st.done) return;
-  st.done = true; save('agenda');
-  if (navigator.vibrate) navigator.vibrate(60);
-  const s = document.createElement('div'); s.className = 'star'; s.textContent = '⭐';
-  s.style.left = (e.clientX - 24) + 'px'; s.style.top = (e.clientY - 24) + 'px'; document.body.appendChild(s); setTimeout(()=>s.remove(), 1000);
-  const next = S.agenda.findIndex(x => !x.done);
-  if (next < 0){
-    $('#kidParty').hidden = false;
-    if ('speechSynthesis' in window){ speechSynthesis.cancel(); say('¡Muy bien!', 0.9); }
-    renderKid(); return;
-  }
-  K.i = next; setTimeout(() => { renderKid(); announce(); }, 350);
-};
-$('#kidParty').onclick = () => { $('#kidParty').hidden = true; };
-// Salir: mantener pulsado el candado 1,5 s (para que la niña no salga sin querer)
-(() => {
-  const b = $('#kidLock'); let t = null;
-  const start = e => { e.preventDefault(); b.classList.add('hold'); t = setTimeout(() => { b.classList.remove('hold'); closeKid(); }, 1500); };
-  const stop = () => { b.classList.remove('hold'); if (t){ clearTimeout(t); t = null; } };
-  b.addEventListener('pointerdown', start); ['pointerup','pointerleave','pointercancel'].forEach(ev => b.addEventListener(ev, stop));
-  b.addEventListener('contextmenu', e => e.preventDefault());
-})();
-$('#btnKid').onclick = openKid;
-
-/* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 4 (27/11/2026)';
-function renderAll(){ refreshPeople(); renderSteps(); renderChoices(); renderRoutines(); renderNotes(); $('#ver').textContent = APP_VERSION; }
-renderAll();
-try{ navigator.storage && navigator.storage.persist && navigator.storage.persist(); }catch(e){}
-if ('serviceWorker' in navigator && location.protocol === 'https:'){ navigator.serviceWorker.register('sw.js').catch(()=>{}); }
 </script>
 </body>
 </html>

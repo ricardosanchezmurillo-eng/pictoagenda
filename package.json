@@ -1,0 +1,8 @@
+{
+  "name": "pictoagenda",
+  "private": true,
+  "description": "Agenda visual con pictogramas ARASAAC",
+  "dependencies": {
+    "@vercel/blob": "^2.9.0"
+  }
+}

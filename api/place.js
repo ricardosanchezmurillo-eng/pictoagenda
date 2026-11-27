@@ -61,14 +61,55 @@ async function search(query){
     lat: x.lat, lon: x.lon, kind: x.type, website: (x.extratags || {}).website || (x.extratags || {})['contact:website'] || '',
     wikidata: (x.extratags || {}).wikidata || '', image: (x.extratags || {}).image || '' }));
 }
+// Enlaces de Google Maps (maps.app.goo.gl, g.co/kgs, google.com/maps…): se siguen los saltos uno a uno
+// y se saca el nombre y las coordenadas de la dirección final o de la propia página.
+const BROWSER = 'Mozilla/5.0 (Linux; Android 14; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0 Mobile Safari/537.36';
+const GOOGLE_RE = /^https?:\/\/([a-z0-9-]+\.)*(goo\.gl|g\.co|google\.[a-z.]+)(\/|$)/i;
+function parseMaps(url){
+  const out = {};
+  let u = url; try { u = decodeURIComponent(url); } catch (e) {}
+  const place = u.match(/\/maps\/place\/([^/@?]+)/); if (place) out.name = place[1].replace(/\+/g, ' ').trim();
+  const q = u.match(/[?&](?:q|query|daddr|destination)=([^&]+)/);
+  if (q){ const v = q[1].replace(/\+/g, ' ').trim();
+    const c = v.match(/^(-?\d{1,2}\.\d+)\s*,\s*(-?\d{1,3}\.\d+)$/);
+    if (c){ out.lat = c[1]; out.lon = c[2]; } else if (!out.name) out.name = v; }
+  const ll = u.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || u.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || u.match(/[?&](?:ll|center|sll)=(-?\d+\.\d+),(-?\d+\.\d+)/);
+  if (ll && !out.lat){ out.lat = ll[1]; out.lon = ll[2]; }
+  return out;
+}
+function parseMapsHtml(html){
+  const out = {};
+  const t = html.match(/<meta[^>]+(?:property|itemprop)=["'](?:og:title|name)["'][^>]*content=["']([^"']+)["']/i)
+    || html.match(/<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|itemprop)=["'](?:og:title|name)["']/i);
+  if (t){ const n = t[1].replace(/&amp;/g, '&').replace(/&#39;/g, "'").split(/\s+·\s+|\s+-\s+(?:Buscar con )?Google/)[0].trim(); if (n && !/^google maps$/i.test(n)) out.name = n; }
+  const a = html.match(/APP_INITIALIZATION_STATE=\[\[\[[-\d.e]+,(-?\d+\.\d+),(-?\d+\.\d+)\]/);
+  if (a){ out.lon = a[1]; out.lat = a[2]; }
+  const m = html.match(/https:\/\/www\.google\.[a-z.]+\/maps\/[^"'\\\s<>]+/);
+  if (m) Object.assign(out, Object.assign(parseMaps(m[0].replace(/\\u0026/g, '&').replace(/&amp;/g, '&')), out));
+  const s = html.match(/\[null,null,(-?\d{1,2}\.\d{4,}),(-?\d{1,3}\.\d{4,})\]/);
+  if (s && !out.lat){ out.lat = s[1]; out.lon = s[2]; }
+  return out;
+}
 async function fromMapsUrl(u){
-  try {
-    const r = await get(u); let url = r.url;
+  let url = u, found = {};
+  for (let hop = 0; hop < 8 && url; hop++){
     const cont = url.match(/[?&]continue=([^&]+)/); if (cont) url = decodeURIComponent(cont[1]);
-    const name = (url.match(/\/place\/([^/@]+)/) || [])[1];
-    const ll = url.match(/!3d(-?\d+\.\d+)!4d(-?\d+\.\d+)/) || url.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || url.match(/[?&]q=(-?\d+\.\d+),(-?\d+\.\d+)/);
-    return { name: name ? decodeURIComponent(name.replace(/\+/g, ' ')) : '', lat: ll && ll[1], lon: ll && ll[2] };
-  } catch (e) { return null; }
+    found = Object.assign(parseMaps(url), found);
+    if (found.lat && found.name) break;
+    if (!GOOGLE_RE.test(url)) break;
+    let r;
+    try { r = await fetch(url, { redirect: 'manual', signal: AbortSignal.timeout(7000), headers: { 'User-Agent': BROWSER, 'Accept-Language': 'es-ES,es;q=0.9', 'Accept': 'text/html' } }); }
+    catch (e) { break; }
+    if (r.url && r.url !== url) found = Object.assign(parseMaps(r.url), found);
+    const loc = r.headers.get('location');
+    if (r.status >= 300 && r.status < 400 && loc){ url = new URL(loc, url).href; continue; }
+    if (!r.ok) break;
+    const html = (await r.text().catch(() => '')).slice(0, 1500000);
+    found = Object.assign(parseMapsHtml(html), found);
+    const refresh = html.match(/http-equiv=["']refresh["'][^>]*url=([^"'>]+)/i) || html.match(/location(?:\.href)?\s*=\s*["']([^"']+)["']/);
+    url = refresh ? new URL(refresh[1].replace(/&amp;/g, '&'), url).href : null;
+  }
+  return found;
 }
 async function photos(req, p, many){
   const urls = [];
@@ -103,10 +144,21 @@ module.exports = async (req, res) => {
     }
     if (b.mode === 'photos'){
       let p = { name: s(b.name, 100), city: s(b.city, 60), lat: s(b.lat, 20), lon: s(b.lon, 20), website: s(b.website, 300), wikidata: s(b.wikidata, 20), image: s(b.image, 400) };
-      if (b.mapsUrl && /^https?:\/\/(maps\.app\.goo\.gl|goo\.gl|(www\.)?google\.[a-z.]+\/maps)/.test(String(b.mapsUrl))){
-        const m = await fromMapsUrl(String(b.mapsUrl)); if (!m || !m.lat) return res.status(404).send('No he podido leer ese enlace de Google Maps');
-        const near = m.name ? (await search(m.name)).find(x => similar(m.name, x.name)) : null;
-        p = Object.assign({}, near || {}, { name: m.name || (near && near.name) || 'sitio', lat: m.lat, lon: m.lon });
+      const link = String(b.mapsUrl || '').match(/https?:\/\/[^\s]+/);
+      if (link){
+        if (!GOOGLE_RE.test(link[0])) return res.status(400).send('Ese enlace no es de Google Maps');
+        const m = await fromMapsUrl(link[0]);
+        const hint = s(String(b.mapsUrl).replace(link[0], ''), 100);
+        const name = m.name || hint;
+        if (!name && !m.lat) return res.status(404).send('No he podido leer ese enlace. Escribe el nombre del sitio y pulsa Buscar.');
+        let near = null;
+        const short = name.split(',')[0].trim();
+        if (name){ near = (await search(name)).find(x => similar(short, x.name)) || (short !== name ? (await search(short)).find(x => similar(short, x.name)) : null) || null;
+          if (near && m.lat && Math.abs(near.lat - m.lat) + Math.abs(near.lon - m.lon) > 0.05) near = null; }
+        p = Object.assign({}, near || {}, { name: short || (near && near.name) || 'sitio', city: near ? '' : 'Madrid' });
+        if (m.lat){ p.lat = m.lat; p.lon = m.lon; }
+        const r = await photos(req, p, true);
+        return res.status(200).json(Object.assign({ name: p.name }, r, { maps: link[0] }));
       }
       const r = await photos(req, p, true);
       return res.status(200).json(Object.assign({ name: p.name }, r));

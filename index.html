@@ -1070,8 +1070,9 @@ async function onFile(e){
 $('#edFile').onchange = onFile; $('#edCamFile').onchange = onFile;
 async function placeApi(body){
   const r = await fetch('/api/place', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
-  const j = await r.json().catch(() => null);
-  if (!r.ok && !j) throw new Error(await r.text().catch(() => 'error'));
+  const t = await r.text().catch(() => '');
+  let j = null; try { j = JSON.parse(t); } catch (e) {}
+  if (!r.ok && !j) throw new Error(t && t.length < 200 ? t : 'No he podido buscar el sitio (error ' + r.status + ')');
   return j || {};
 }
 $('#edWeb').onclick = () => {
@@ -1083,7 +1084,7 @@ $('#webGo').onclick = async () => {
   const q = $('#webQ').value.trim(); if (!q) return;
   const res = $('#webRes'); res.innerHTML = '<p class="hint">Buscando…</p>';
   try{
-    if (/^https?:\/\//.test(q)) return showPhotos({mode:'photos', mapsUrl:q});
+    if (/https?:\/\//.test(q)) return showPhotos({mode:'photos', mapsUrl:q});
     const j = await placeApi({mode:'search', query:q});
     const list = j.places || [];
     if (!list.length){ res.innerHTML = '<p class="hint">No lo encuentro. Prueba con otro nombre o pega el enlace de Google Maps.</p>'; return; }
@@ -1596,7 +1597,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 8.1 (27/11/2026)';
+const APP_VERSION = 'Versión 8.2 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

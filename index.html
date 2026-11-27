@@ -1193,7 +1193,7 @@ async function openKid(){
   if (!S.agenda.length){ toast('Primero crea la agenda'); return; }
   $('#kid').hidden = false; $('#kParty').hidden = true; $('#board').hidden = true;
   await refreshKid(true);
-  resolveText('contento').then(r => setImg($('#kFeel img'), r));
+  $('#kFeel img').src = girlFace('contenta');
   try{ if (document.documentElement.requestFullscreen) await document.documentElement.requestFullscreen(); }catch(e){}
   try{ if (navigator.wakeLock) wake = await navigator.wakeLock.request('screen'); }catch(e){}
   announce();
@@ -1378,6 +1378,45 @@ function startWait(cfg, standalone){
   B.tick = setInterval(() => { left -= 1; draw(); if (left === 0){ chime(); say('Ya está. Se acabó la espera', 0.85); } if (left < 0) clearInterval(B.tick); }, 1000);
 }
 // Cómo me siento (con cuánto: un poco, bastante, mucho)
+// Niña con gafas de montura roja oscura: una cara para cada emoción (dibujo propio, sin conexión)
+const GIRL = {hair:'#5A3825', skin:'#F6D2B8', skinLine:'#E2B396', frame:'#7A1E2B', shirt:'#3D7BE0', ink:'#2A2230', mouth:'#B5484B'};
+function girlFace(e){
+  const g = GIRL, s = (d, w, c) => `<path d="${d}" fill="none" stroke="${c || g.ink}" stroke-width="${w || 4}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const dot = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r || 5.5}" fill="${g.ink}"/><circle cx="${x + 1.8}" cy="${y - 2}" r="1.6" fill="#fff"/>`;
+  const big = (x, y) => `<circle cx="${x}" cy="${y}" r="9" fill="#fff" stroke="${g.ink}" stroke-width="2"/><circle cx="${x}" cy="${y + 1}" r="4.5" fill="${g.ink}"/>`;
+  const drop = (x, y, c) => `<path d="M${x} ${y} q-6 10 0 14 q6 -4 0 -14z" fill="${c || '#6FB3F2'}"/>`;
+  const F = {
+    contenta: { brows: s('M64 82 Q78 76 92 82', 4.5, g.hair) + s('M108 82 Q122 76 136 82', 4.5, g.hair), eyes: dot(78,107) + dot(122,107),
+      mouth: `<path d="M82 133 Q100 156 118 133 Z" fill="${g.mouth}"/><path d="M88 136 Q100 141 112 136" fill="#fff"/>`, cheek: .55 },
+    triste: { brows: s('M64 84 L91 78', 4.5, g.hair) + s('M109 78 L136 84', 4.5, g.hair), eyes: dot(78,110) + dot(122,110),
+      mouth: s('M86 147 Q100 134 114 147', 4.5, g.mouth), extra: drop(127, 118), cheek: .35 },
+    enfadada: { brows: s('M63 79 L92 91', 5.5, g.hair) + s('M108 91 L137 79', 5.5, g.hair), eyes: dot(79,109,5) + dot(121,109,5),
+      mouth: s('M85 145 Q100 135 115 145', 5, g.mouth), cheek: .9 },
+    cansada: { brows: s('M64 87 Q78 84 92 87', 4, g.hair) + s('M108 87 Q122 84 136 87', 4, g.hair),
+      eyes: s('M69 108 Q78 114 87 108', 4) + s('M113 108 Q122 114 131 108', 4),
+      mouth: `<ellipse cx="100" cy="143" rx="7" ry="9" fill="${g.mouth}"/>`,
+      extra: `<text x="150" y="58" font-family="Andika, sans-serif" font-size="24" font-weight="700" fill="#8E96AA">z</text><text x="164" y="40" font-family="Andika, sans-serif" font-size="17" font-weight="700" fill="#B9C0CF">z</text>`, cheek: .35 },
+    asustada: { brows: s('M64 78 Q78 70 92 78', 4.5, g.hair) + s('M108 78 Q122 70 136 78', 4.5, g.hair), eyes: big(78,107) + big(122,107),
+      mouth: `<ellipse cx="100" cy="143" rx="8" ry="11" fill="${g.mouth}"/>`, cheek: .3 },
+    nerviosa: { brows: s('M64 83 L91 79', 4.5, g.hair) + s('M109 79 L136 83', 4.5, g.hair), eyes: dot(78,108) + dot(122,108),
+      mouth: s('M83 141 Q89 134 95 141 Q101 148 107 141 Q113 134 117 141', 4, g.mouth), extra: drop(56, 70), cheek: .55 }
+  }[e] || {};
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <path d="M28 104 Q26 24 100 22 Q174 24 172 104 L172 166 Q152 178 136 158 L64 158 Q48 178 28 166 Z" fill="${g.hair}"/>
+  <path d="M50 200 Q54 168 100 166 Q146 168 150 200 Z" fill="${g.shirt}"/>
+  <rect x="88" y="150" width="24" height="22" rx="8" fill="${g.skin}"/>
+  <circle cx="46" cy="110" r="10" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/><circle cx="154" cy="110" r="10" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/>
+  <ellipse cx="100" cy="106" rx="54" ry="58" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/>
+  <path d="M45 96 Q48 42 100 40 Q152 42 155 96 Q140 70 118 74 Q104 58 86 72 Q64 66 45 96 Z" fill="${g.hair}"/>
+  <circle cx="68" cy="130" r="9" fill="#F28C8C" opacity="${F.cheek || .5}"/><circle cx="132" cy="130" r="9" fill="#F28C8C" opacity="${F.cheek || .5}"/>
+  ${F.brows || ''}${F.eyes || ''}
+  <rect x="59" y="93" width="38" height="30" rx="11" fill="#fff" fill-opacity=".12" stroke="${g.frame}" stroke-width="5"/>
+  <rect x="103" y="93" width="38" height="30" rx="11" fill="#fff" fill-opacity=".12" stroke="${g.frame}" stroke-width="5"/>
+  <path d="M97 104 Q100 99 103 104" fill="none" stroke="${g.frame}" stroke-width="4.5"/>
+  <path d="M59 102 L47 100" stroke="${g.frame}" stroke-width="4.5" stroke-linecap="round"/><path d="M141 102 L153 100" stroke="${g.frame}" stroke-width="4.5" stroke-linecap="round"/>
+  ${F.mouth || ''}${F.extra || ''}</svg>`;
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+}
 const FEELINGS = ['contenta','triste','enfadada','cansada','asustada','nerviosa'];
 function openFeel(standalone){
   openBoard(standalone);
@@ -1385,7 +1424,7 @@ function openFeel(standalone){
   head.innerHTML = `<div class="syl">${sylHTML('¿cómo estás?'.replace(/[¿?]/g,''))}</div>`;
   body.innerHTML = `<div class="bgrid">${FEELINGS.map((f,k) => `<button class="opt" data-k="${k}"><img alt="" src="${LOAD}"><div class="syl">${sylHTML(f)}</div></button>`).join('')}</div><div id="fScale"></div>`;
   say('¿Cómo estás?', 0.85);
-  body.querySelectorAll('.opt').forEach((b,k) => { resolveText(FEELINGS[k]).then(r => setImg(b.querySelector('img'), r));
+  body.querySelectorAll('.opt').forEach((b,k) => { b.querySelector('img').src = girlFace(FEELINGS[k]);
     b.onclick = () => {
       body.querySelectorAll('.opt').forEach(x => x.classList.toggle('on', x===b));
       if ('speechSynthesis' in window) speechSynthesis.cancel(); say('Estoy ' + FEELINGS[k], 0.85);
@@ -1397,10 +1436,10 @@ function openFeel(standalone){
 $('#toolFeel').onclick = () => openFeel(true);
 $('#kFeel').onclick = () => openFeel(false);
 resolveText('esperar').then(r => setImg($('#icoWait'), r));
-resolveText('contento').then(r => setImg($('#icoFeel'), r));
+$('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 5 (27/11/2026)';
+const APP_VERSION = 'Versión 5.1 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

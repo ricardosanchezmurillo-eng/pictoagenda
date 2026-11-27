@@ -1441,7 +1441,8 @@ function startWait(cfg, standalone){
 }
 // Cómo me siento (con cuánto: un poco, bastante, mucho)
 // Niña con gafas de montura roja oscura: una cara muy marcada para cada emoción (dibujo propio, sin conexión)
-const GIRL = {hair:'#5A3825', skin:'#F6D2B8', skinLine:'#E2B396', frame:'#7A1E2B', shirt:'#3D7BE0', ink:'#2A2230', mouth:'#A83A40'};
+// Como Miranda: pelo castaño claro recogido en un moño, sin flequillo, gafas redondas rojas
+const GIRL = {hair:'#8C6A4C', hairDark:'#6E5038', skin:'#F7DCCB', skinLine:'#E5BFA8', frame:'#B8322E', shirt:'#EDE3D6', shirtLine:'#D6C7B4', ink:'#2A2230', mouth:'#A83A40'};
 const FEEL_BG = {contenta:'#FFE07A', triste:'#B9D6FF', enfadada:'#FFB0A3', cansada:'#D8CCF3', asustada:'#BFEFDA', nerviosa:'#FFD09E'};
 function girlFace(e){
   const g = GIRL, ink = g.ink;
@@ -1483,19 +1484,20 @@ function girlFace(e){
   }[e] || {};
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
   <circle cx="100" cy="100" r="98" fill="${FEEL_BG[e] || '#EEF2F8'}"/>
-  <path d="M30 104 Q28 26 100 24 Q172 26 170 104 L170 164 Q152 176 136 156 L64 156 Q48 176 30 164 Z" fill="${g.hair}"/>
-  <path d="M52 200 Q56 170 100 168 Q144 170 148 200 Z" fill="${g.shirt}"/>
-  <rect x="88" y="150" width="24" height="22" rx="8" fill="${g.skin}"/>
-  <circle cx="47" cy="110" r="10" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/><circle cx="153" cy="110" r="10" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/>
-  <ellipse cx="100" cy="106" rx="53" ry="57" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/>
-  ${F.tint ? `<ellipse cx="100" cy="106" rx="53" ry="57" fill="${F.tint}" opacity=".22"/>` : ''}
-  <path d="M46 96 Q49 44 100 42 Q151 44 154 96 Q139 70 118 74 Q104 58 86 72 Q64 66 46 96 Z" fill="${g.hair}"/>
-  <ellipse cx="66" cy="131" rx="10" ry="7" fill="#F27A7A" opacity="${F.cheeks == null ? .5 : F.cheeks}"/><ellipse cx="134" cy="131" rx="10" ry="7" fill="#F27A7A" opacity="${F.cheeks == null ? .5 : F.cheeks}"/>
+  <circle cx="100" cy="30" r="17" fill="${g.hair}"/><path d="M90 26 Q100 20 110 26" fill="none" stroke="${g.hairDark}" stroke-width="2"/>
+  <path d="M54 200 Q58 170 100 168 Q142 170 146 200 Z" fill="${g.shirt}" stroke="${g.shirtLine}" stroke-width="2"/>
+  <rect x="89" y="150" width="22" height="22" rx="8" fill="${g.skin}"/>
+  <ellipse cx="48" cy="112" rx="9" ry="12" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/><ellipse cx="152" cy="112" rx="9" ry="12" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/>
+  <ellipse cx="100" cy="108" rx="51" ry="58" fill="${g.skin}" stroke="${g.skinLine}" stroke-width="2"/>
+  ${F.tint ? `<ellipse cx="100" cy="108" rx="51" ry="58" fill="${F.tint}" opacity=".22"/>` : ''}
+  <path d="M49 104 Q46 46 100 44 Q154 46 151 104 Q148 76 130 66 Q100 58 70 66 Q52 76 49 104 Z" fill="${g.hair}"/>
+  <path d="M76 56 Q100 48 124 56 M70 64 Q100 54 130 64" fill="none" stroke="${g.hairDark}" stroke-width="1.8" opacity=".7"/>
+  <ellipse cx="66" cy="133" rx="10" ry="7" fill="#F27A7A" opacity="${F.cheeks == null ? .5 : F.cheeks}"/><ellipse cx="134" cy="133" rx="10" ry="7" fill="#F27A7A" opacity="${F.cheeks == null ? .5 : F.cheeks}"/>
   ${F.brows || ''}${F.eyes || ''}
-  <rect x="58" y="94" width="40" height="31" rx="12" fill="none" stroke="${g.frame}" stroke-width="4.5"/>
-  <rect x="102" y="94" width="40" height="31" rx="12" fill="none" stroke="${g.frame}" stroke-width="4.5"/>
-  <path d="M98 106 Q100 101 102 106" fill="none" stroke="${g.frame}" stroke-width="4"/>
-  <path d="M58 103 L48 101" stroke="${g.frame}" stroke-width="4" stroke-linecap="round"/><path d="M142 103 L152 101" stroke="${g.frame}" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="78" cy="108" r="18" fill="none" stroke="${g.frame}" stroke-width="5"/>
+  <circle cx="122" cy="108" r="18" fill="none" stroke="${g.frame}" stroke-width="5"/>
+  <path d="M96 105 Q100 99 104 105" fill="none" stroke="${g.frame}" stroke-width="4.5"/>
+  <path d="M60 104 L49 101" stroke="${g.frame}" stroke-width="4.5" stroke-linecap="round"/><path d="M140 104 L151 101" stroke="${g.frame}" stroke-width="4.5" stroke-linecap="round"/>
   ${F.mouth || ''}${F.extra || ''}</svg>`;
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
 }
@@ -1521,7 +1523,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 7.1 (27/11/2026)';
+const APP_VERSION = 'Versión 7.2 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

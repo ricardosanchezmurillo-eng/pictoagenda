@@ -3,7 +3,7 @@ const RULES = `Tipos de paso:
 1) Momento del día: {"type":"time","time":"hoy"|"manana_dia"|"manana"|"mediodia"|"tarde"|"noche"}
    "mañana" como día siguiente = "manana_dia"; "por la mañana" = "manana". Ponlo justo antes de las actividades de ese momento y no lo repitas.
 2) Actividad: {"type":"activity","label":"...","picto":"...","people":["..."],"cancelled":false,"reason":"","place":null}
-   - label: lo más corto posible (1 a 4 palabras), en minúsculas, fácil de leer por sílabas: "cole", "desayunar", "coche", "parque", "colgar el abrigo", "viene mamá".
+   - label: lo más corto posible (1 a 4 palabras), en minúsculas, con TODAS las tildes bien puestas (papá, mamá, música, autobús, día), fácil de leer por sílabas: "cole", "desayunar", "coche", "parque", "colgar el abrigo", "viene mamá".
    - picto: cómo se llama el pictograma en ARASAAC. Para acciones con objeto: verbo habitual en infinitivo SIN "se" + artículo + sustantivo
      ("lavar las manos", "quitar los zapatos", "colgar el abrigo", "poner el pijama", "lavar los dientes", "recoger los juguetes").
      Usa el verbo más habitual: "poner el abrigo en la percha" → "colgar el abrigo"; "meter la ropa en la lavadora" → "poner la lavadora".

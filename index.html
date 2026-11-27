@@ -817,9 +817,26 @@ function peopleHTML(p){ return p && p.length ? '<div class="ppl">' + p.map(() =>
 function fillPeople(box, p){ if (!p) return; box.querySelectorAll('.ppl img').forEach((im, k) => resolveText(p[k]).then(r => setImg(im, r))); }
 
 /* ---------- Sílabas y voz ---------- */
+// Tildes: el dictado a veces escribe "papa", "mama", "musica"… Se muestran y se leen bien escritas.
+const TILDES = Object.fromEntries(('papá mamá bebé tía tío tías tíos música autobús camión avión jardín salón canción natación habitación televisión '+
+  'película películas teléfono médico médica fútbol árbol sofá café lápiz plátano melón limón jamón ratón león pájaro día días mañana baño '+
+  'bañarse bañar niño niña niños niñas cumpleaños piñata montaña rincón balón botón cajón jabón champú sandía maíz rápido después aquí allí ahí '+
+  'adiós sábado miércoles números matemáticas educación física inglés también peluquería panadería frutería cafetería hamburguesería pizzería '+
+  'policía dibujo pequeño pequeña araña muñeca muñeco cuñado cuñada señor señora compañero compañera estación excursión '+
+  'maría lucía inés josé ramón jesús ángel ángela sofía mónica verónica raúl iván rubén óscar álvaro adrián martín julián sebastián '+
+  'nicolás tomás andrés joaquín agustín víctor héctor bárbara rocío begoña íñigo')
+  .split(' ').map(w => [stripAccents(w).replace(/ñ/g,'n'), w]).concat([['papa','papá'],['mama','mamá']]));
+function fixAccents(text){
+  return String(text).replace(/[A-Za-zÁÉÍÓÚÜÑáéíóúüñ]+/g, w => {
+    const fix = TILDES[stripAccents(w.toLocaleLowerCase('es')).replace(/ñ/g,'n')];
+    if (!fix) return w;
+    if (w.length > 1 && w === w.toLocaleUpperCase('es')) return fix.toLocaleUpperCase('es');
+    return w[0] !== w[0].toLocaleLowerCase('es') ? fix[0].toLocaleUpperCase('es') + fix.slice(1) : fix;
+  });
+}
 function sylHTML(label){
   const caps = S.settings.caps, dash = S.settings.dash;
-  return String(label).split(/\s+/).filter(Boolean).map(w => {
+  return fixAccents(label).split(/\s+/).filter(Boolean).map(w => {
     const parts = syllabify(w).map((s,i) => `<span class="s s${i%2}">${esc(caps ? s.toLocaleUpperCase('es') : s)}</span>`);
     return '<span class="w">' + parts.join(dash ? '<span class="d">-</span>' : '') + '</span>';
   }).join(' ');
@@ -835,6 +852,7 @@ function say(text, rate, onstart, onend){
 }
 function speakLabel(label, el, keep){
   if (!('speechSynthesis' in window)) return;
+  label = fixAccents(label);
   if (!keep) speechSynthesis.cancel();
   const spans = el ? [...el.querySelectorAll('.s')] : [];
   const clear = () => spans.forEach(s=>s.classList.remove('on'));
@@ -1138,7 +1156,7 @@ $('#edCancel').onclick = () => { $('#ed').hidden = true; ED = null; };
 $('#ed').addEventListener('click', e => { if (e.target.id==='ed') $('#edCancel').click(); });
 $('#edSave').onclick = async () => {
   if (!ED.sel){ toast('Elige un pictograma o una foto'); return; }
-  const choice = { type: ED.sel.type, label: $('#edLabel').value.trim() || (ED.step ? ED.step.text : ''), maps: $('#edMaps').value.trim() || undefined };
+  const choice = { type: ED.sel.type, label: fixAccents($('#edLabel').value.trim() || (ED.step ? ED.step.text : '')), maps: $('#edMaps').value.trim() || undefined };
   if (ED.sel.type==='photo'){
     if (ED.blob){ const pid = 'ph_' + uid(); try{ await DB.put(pid, ED.blob); }catch(err){ toast('No se pudo guardar la foto'); return; } choice.photo = pid; }
     else choice.photo = ED.sel.photo;
@@ -1656,7 +1674,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 8.5 (27/11/2026)';
+const APP_VERSION = 'Versión 8.6 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

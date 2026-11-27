@@ -10,7 +10,7 @@ Tipos de paso:
    "mañana" como día siguiente = "manana_dia"; "por la mañana" = "manana". Ponlo justo antes de las actividades de ese momento y no lo repitas.
 2) Actividad: {"type":"activity","label":"...","picto":"...","people":["..."],"cancelled":false,"reason":""}
    - label: lo más corto posible (1 a 3 palabras), en minúsculas, fácil de leer por sílabas: "cole", "desayunar", "coche", "parque", "casa de la abuela", "viene mamá".
-   - picto: UNA palabra concreta para buscar el pictograma en ARASAAC (sustantivo o verbo): "colegio", "desayunar", "coche", "parque".
+   - picto: cómo se llama el pictograma en ARASAAC. Para acciones con objeto: verbo en infinitivo SIN "se" + artículo + sustantivo ("lavar las manos", "quitar los zapatos", "poner el pijama", "lavar los dientes"). Para el resto, una palabra: "colegio", "desayunar", "coche", "parque".
    - people: personas que van con ella o hacen la actividad con ella.
    - Si alguien viene a buscarla o la recoge: label "viene <persona>", picto "<persona>", people [].
    - Si NO va a pasar ("no hay cole", "hoy no vamos a la piscina"): "cancelled": true y "reason" con el motivo corto si lo dicen ("Eva está enferma").

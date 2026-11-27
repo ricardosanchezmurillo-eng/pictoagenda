@@ -635,7 +635,7 @@ const LS = {
 const S = {
   agenda: LS.get('agenda', []),
   choices: LS.get('choices', {}),
-  cache: LS.get('cache', {}),
+  cache: LS.get('cache2', {}),
   routines: LS.get('routines', []),
   settings: Object.assign({caps:true, dash:false, speak:true, late:false, whisper:false, ai:true, view:'step'}, LS.get('settings', {})),
   profile: Object.assign({ notes: ['Anticipar con la agenda y avisar de los cambios.', 'Durante una crisis: calma, menos estímulos, sin confrontación, seguridad.'] }, LS.get('profile', {}))
@@ -683,15 +683,40 @@ async function apiJSON(path){ try{ const r = await fetch(API + path); if (!r.ok)
 async function arasaacBest(q){ const j = await apiJSON('/bestsearch/' + encodeURIComponent(q)); return Array.isArray(j) && j[0] ? j[0]._id : null; }
 async function arasaacSearch(q){ const j = await apiJSON('/search/' + encodeURIComponent(q)); return Array.isArray(j) ? j.slice(0,40).map(x=>x._id) : []; }
 const pending = {};
+// ARASAAC nombra las acciones con artículo ("lavar las manos", "quitar los zapatos"):
+// 1) se prueba la frase exacta con artículo; 2) se buscan pictogramas cuya palabra clave contenga TODAS las palabras.
+const ART = n => /as$/.test(n) ? 'las' : /(os|es)$/.test(n) ? 'los' : /a$/.test(n) ? 'la' : 'el';
+function phraseVariants(label){
+  const w = String(label).toLocaleLowerCase('es').split(/\s+/).filter(Boolean);
+  const cw = w.filter(x => !STOP.has(stripAccents(x)));
+  const v = [w.join(' ')];
+  if (cw.length === 2){ const vb = stripReflexive(cw[0]), n = cw[1]; v.push(`${vb} ${ART(n)} ${n}`, `${vb}se ${ART(n)} ${n}`); }
+  return [...new Set(v)];
+}
+const stem5 = w => stripAccents(stripReflexive(String(w).toLocaleLowerCase('es'))).slice(0, 5);
+async function smartFind(q){
+  for (const v of phraseVariants(q)){ const id = await arasaacBest(v); if (id) return id; }
+  const qk = keyWords(q); const qw = [...new Set(qk.map(stem5))]; if (!qw.length) return null;
+  let best = null, bs = 0, bl = 1e9;
+  for (const t of [...new Set(qk)].reverse().slice(0, 2)){
+    const j = await apiJSON('/search/' + encodeURIComponent(t)); if (!Array.isArray(j)) continue;
+    for (const x of j) for (const k of (x.keywords || [])){
+      const kw = keyWords(String(k.keyword || '')).map(stem5); const sc = qw.filter(w => kw.includes(w)).length;
+      if (sc > bs || (sc === bs && sc > 0 && kw.length < bl)){ best = x._id; bs = sc; bl = kw.length; }
+    }
+    if (bs === qw.length) break;
+  }
+  return best && bs === qw.length ? best : null;
+}
 function autoFind(label){
   const key = keyWords(label).join(' ') || label;
   if (S.cache[key]) return Promise.resolve(S.cache[key]);
   if (pending[key]) return pending[key];
   return pending[key] = (async () => {
-    let id = null;
-    for (const v of searchVariants(label)){ id = await arasaacBest(v); if (id) break; }
+    let id = await smartFind(label);
+    if (!id) for (const v of searchVariants(label)){ id = await arasaacBest(v); if (id) break; }
     if (!id){ const r = await arasaacSearch(label); id = r[0] || null; }
-    if (id){ S.cache[key] = id; LS.set('cache', S.cache); }
+    if (id){ S.cache[key] = id; LS.set('cache2', S.cache); }
     delete pending[key];
     return id;
   })();
@@ -1492,7 +1517,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 6.1 (27/11/2026)';
+const APP_VERSION = 'Versión 6.2 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

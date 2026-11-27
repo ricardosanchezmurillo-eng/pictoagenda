@@ -386,7 +386,13 @@ label.f{display:block;font-weight:700;margin:14px 0 5px;font-size:.92rem}
     </div>
     <div id="paneF" hidden>
       <div class="row"><button class="pri grow" id="edPick">Elegir del carrete</button><button class="grow" id="edCam">Hacer foto</button></div>
-      <button class="soft" id="edWeb" style="width:100%;margin-top:8px">Buscar foto del sitio en internet</button>
+      <button class="soft" id="edWeb" style="width:100%;margin-top:8px">Buscar el sitio y su foto en internet</button>
+      <div id="webBox" hidden>
+        <label class="f" for="webQ">Nombre real del sitio, o enlace de Google Maps</label>
+        <div class="row"><input id="webQ" class="grow" placeholder="Parque de la Osa Menor, Leganés"><button class="pri" id="webGo">Buscar</button></div>
+        <p class="hint">Truco: en Google Maps busca el sitio, pulsa Compartir y pega aquí el enlace.</p>
+        <div id="webRes"></div>
+      </div>
       <input type="file" id="edFile" accept="image/*" hidden>
       <input type="file" id="edCamFile" accept="image/*" capture="environment" hidden>
       <p class="hint">Mejor el sitio real (la puerta, el cartel) o la cara de la persona.</p>
@@ -727,6 +733,13 @@ function autoFind(label){
 }
 
 /* ---------- Qué imagen sale en cada paso ---------- */
+function matchExact(words){
+  if (!words.length) return null;
+  for (const id in S.choices){ const c = S.choices[id];
+    const ts = (c.triggers || []).concat(c.label && !c.time ? [keyWords(c.label)] : []);
+    if (ts.some(t => t.length === words.length && t.every(w => words.includes(w)))) return id; }
+  return null;
+}
 function queryId(c){ return S.cache[keyWords(c.q || c.label).join(' ')] || null; }
 function timeOf(step){ return TIMES[step.time] || {label:step.text, q:step.text}; }
 const TIME_ICON = {hoy:'📅', manana_dia:'📆', manana:'🌅', mediodia:'☀️', tarde:'🌤️', noche:'🌙'};
@@ -738,7 +751,8 @@ function resolveSync(step){
     const qid = S.cache[keyWords(timeOf(step).q).join(' ')];
     return qid ? {type:'picto', id:qid, label:timeOf(step).label, src:'momento del día'} : null;
   }
-  const cid = matchChoice(S.choices, keyWords(step.text)) || (step.q ? matchChoice(S.choices, keyWords(step.q)) : null);
+  const cid = step.place ? (matchExact(keyWords(step.place.name)) || matchExact(keyWords(step.text)))
+    : (matchChoice(S.choices, keyWords(step.text)) || (step.q ? matchChoice(S.choices, keyWords(step.q)) : null));
   if (cid) return Object.assign({src:'guardado', cid}, S.choices[cid]);
   const key = keyWords(step.q || step.text).join(' ');
   if (S.cache[key]) return {type:'picto', id:S.cache[key], label:step.text, src:'ARASAAC'};
@@ -893,13 +907,14 @@ function aiToItems(steps){
 async function placePhoto(place){
   const r = await fetch('/api/place', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(place)});
   const j = await r.json().catch(() => ({}));
+  if (j.places) return j;
   if (!r.ok || !j.image) return {maps: j.maps};
   return {blob: await resizeImage(await dataURLToBlob(j.image)), maps: j.maps, source: j.source};
 }
 async function fetchPlaces(items){
   for (const it of items){
     if (!it.place) continue;
-    const key = keyWords(it.place.name); if (!key.length || matchChoice(S.choices, key)) continue;
+    const key = keyWords(it.place.name); if (!key.length || matchExact(key)) continue;
     try{
       const p = await placePhoto(it.place); if (!p.blob) continue;
       const pid = 'ph_' + uid(); await DB.put(pid, p.blob);
@@ -1017,6 +1032,7 @@ async function openEditor(o){
   $('#edTrigBox').hidden = isTime; $('#edPersonRow').hidden = isTime;
   $('#edPerson').checked = !!((base && base.person) || o.person);
   $('#edMapsBox').hidden = !!o.person || !!(base && base.person) || isTime;
+  $('#webBox').hidden = true; $('#webRes').innerHTML = ''; $('#webQ').value = '';
   $('#edQ').value = isTime ? timeOf(step).q : (keyWords(phrase).slice(-1)[0] || phrase);
   tab((ED.sel && ED.sel.type==='photo') || (o.person && !ED.sel) ? 'F' : 'P');
   refreshPreview();
@@ -1052,15 +1068,42 @@ async function onFile(e){
   try{ ED.blob = await resizeImage(f); ED.sel = {type:'photo'}; refreshPreview(); }catch(err){ toast(err.message); }
 }
 $('#edFile').onchange = onFile; $('#edCamFile').onchange = onFile;
-$('#edWeb').onclick = async () => {
-  const name = $('#edLabel').value.trim(); if (!name){ toast('Escribe el nombre del sitio'); return; }
-  const b = $('#edWeb'), old = b.textContent; b.disabled = true; b.textContent = 'Buscando…';
-  try{ const p = await placePhoto({name});
-    if (p.blob){ ED.blob = p.blob; ED.sel = {type:'photo'}; refreshPreview(); toast('Foto encontrada (' + p.source + ')'); }
-    else toast('No he encontrado foto. Prueba con el nombre completo y la ciudad.');
-    if (p.maps && !$('#edMaps').value) $('#edMaps').value = p.maps;
-  }catch(e){ toast('Sin conexión'); } finally { b.disabled = false; b.textContent = old; }
+async function placeApi(body){
+  const r = await fetch('/api/place', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+  const j = await r.json().catch(() => null);
+  if (!r.ok && !j) throw new Error(await r.text().catch(() => 'error'));
+  return j || {};
+}
+$('#edWeb').onclick = () => {
+  const box = $('#webBox'); box.hidden = !box.hidden;
+  if (!box.hidden){ $('#webQ').value = $('#webQ').value || ($('#edLabel').value.trim() ? $('#edLabel').value.trim() + ', Leganés' : ''); $('#webRes').innerHTML = ''; $('#webQ').focus(); }
 };
+$('#webQ').addEventListener('keydown', e => { if (e.key === 'Enter') $('#webGo').click(); });
+$('#webGo').onclick = async () => {
+  const q = $('#webQ').value.trim(); if (!q) return;
+  const res = $('#webRes'); res.innerHTML = '<p class="hint">Buscando…</p>';
+  try{
+    if (/^https?:\/\//.test(q)) return showPhotos({mode:'photos', mapsUrl:q});
+    const j = await placeApi({mode:'search', query:q});
+    const list = j.places || [];
+    if (!list.length){ res.innerHTML = '<p class="hint">No lo encuentro. Prueba con otro nombre o pega el enlace de Google Maps.</p>'; return; }
+    res.innerHTML = list.map((p,i) => `<div class="li"><div class="grow"><b>${esc(p.name)}</b><div class="small">${esc(p.address)}</div></div><button class="soft" data-i="${i}">Este</button></div>`).join('');
+    res.querySelectorAll('[data-i]').forEach(b => b.onclick = () => showPhotos(Object.assign({mode:'photos'}, list[+b.dataset.i])));
+  }catch(e){ res.innerHTML = '<p class="hint">Sin conexión o error al buscar.</p>'; }
+};
+async function showPhotos(body){
+  const res = $('#webRes'); res.innerHTML = '<p class="hint">Buscando fotos del sitio…</p>';
+  try{
+    const j = await placeApi(body);
+    if (j.maps) $('#edMaps').value = j.maps;
+    if (!j.images || !j.images.length){ res.innerHTML = '<p class="hint">Sitio encontrado (ya tienes el enlace de Maps), pero sin fotos públicas. Haz una foto o elige una del carrete.</p>'; return; }
+    res.innerHTML = '<p class="hint">Toca la foto que quieras:</p><div class="grid">' + j.images.map((x,i) => `<img data-i="${i}" src="${x.data}" alt="">`).join('') + '</div>';
+    res.querySelectorAll('img[data-i]').forEach(im => im.onclick = async () => {
+      res.querySelectorAll('img').forEach(x => x.classList.toggle('sel', x === im));
+      ED.blob = await resizeImage(await dataURLToBlob(j.images[+im.dataset.i].data)); ED.sel = {type:'photo'}; refreshPreview();
+    });
+  }catch(e){ res.innerHTML = '<p class="hint">' + esc(e.message || 'Error') + '</p>'; }
+}
 function openMaps(m){ window.open(/^https?:\/\//i.test(m) ? m : 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(m), '_blank', 'noopener'); }
 $('#edMapsFind').onclick = () => { const q = $('#edMaps').value.trim() || $('#edLabel').value.trim(); if (q) openMaps(q); toast('En Maps: elige el sitio, Compartir, copia el enlace y pégalo aquí'); };
 $('#edCancel').onclick = () => { $('#ed').hidden = true; ED = null; };
@@ -1553,7 +1596,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 8 (27/11/2026)';
+const APP_VERSION = 'Versión 8.1 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

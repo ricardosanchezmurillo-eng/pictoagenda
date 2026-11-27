@@ -8,7 +8,7 @@ module.exports = async (req, res) => {
   const b = req.body || {};
   const text = str(b.text, 1500); if (!text) return res.status(400).send('Sin texto');
   let last = '';
-  for (const model of models('PA_AI_MODELS', 'google/gemini-2.5-flash-lite,google/gemini-2.5-flash,anthropic/claude-haiku-5.5,anthropic/claude-haiku-4.5')){
+  for (const model of models('PA_AI_MODELS', 'google/gemini-2.5-flash,google/gemini-2.5-flash-lite,anthropic/claude-haiku-5.5,anthropic/claude-haiku-4.5')){
     try {
       const r = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
         method: 'POST', signal: AbortSignal.timeout(12000),

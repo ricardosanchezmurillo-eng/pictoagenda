@@ -751,6 +751,7 @@ function autoFind(label){
   if (pending[key]) return pending[key];
   return pending[key] = (async () => {
     let id = await smartFind(label);
+    if (!id){ const kw = keyWords(label); if (kw.length >= 2 && GENERIC.has(stripAccents(kw[0]))) id = await smartFind(kw.slice(1).join(' ')); }
     if (!id) for (const v of searchVariants(label)){ id = await arasaacBest(v); if (id) break; }
     if (!id){ const r = await arasaacSearch(label); id = r[0] || null; }
     if (id){ S.cache[key] = id; LS.set('cache2', S.cache); }
@@ -942,11 +943,34 @@ $('#steps').addEventListener('click', e => {
   if (e.target.closest('[data-a="done"]') && !S.agenda[i].time){ S.agenda[i].done = !S.agenda[i].done; save('agenda'); renderSteps(); return; }
   openStep(S.agenda[i].uid);
 });
-function aiToItems(steps){
-  return steps.map(s => s.type === 'time' ? {time:s.time, text:TIMES[s.time].label}
+// La IA a veces acorta ("jugar") o se inventa personas: se corrige con lo que de verdad se ha dicho
+const GENERIC = new Set(['jugar','hacer','ir','ver','tocar','montar','leer','pintar','cantar','bailar']);
+function aiGuard(items, said){
+  if (!said) return items;
+  const low = ' ' + stripAccents(String(said).toLocaleLowerCase('es')).replace(/[.,;:!?¿¡"]/g, ' ').replace(/\s+/g, ' ') + ' ';
+  const pk = Object.keys(Object.assign({}, PEOPLE_BASE, PEOPLE_EXTRA)).map(k => stripAccents(k));
+  const used = {};
+  items.forEach(it => {
+    if (it.people){
+      it.people = it.people.filter(p => { const k = stripAccents(String(p).toLocaleLowerCase('es')).trim();
+        return low.includes(' ' + k + ' ') || low.includes(' ' + k.split(' ')[0] + ' ') || (k === 'papa' && low.includes(' papi ')) || (k === 'mama' && low.includes(' mami ')); });
+      if (!it.people.length) delete it.people;
+    }
+    const lab = stripAccents(String(it.text || '').toLocaleLowerCase('es')).trim();
+    if (GENERIC.has(lab)){
+      const re = new RegExp(' ' + lab + ' ((?:a|al|con|de)(?: (?:el|la|los|las|un|una|unos|unas))? ([a-zñ]+))', 'g');
+      const ms = [...low.matchAll(re)].filter(m => !pk.includes(m[2]) && !['y','despues','luego','mi','tu'].includes(m[2]));
+      const n = used[lab] || 0; used[lab] = n + 1;
+      const m = ms[n]; if (m){ it.text = fixAccents(lab + ' ' + m[1]); it.q = it.text; }
+    }
+  });
+  return items;
+}
+function aiToItems(steps, said){
+  return aiGuard(steps.map(s => s.type === 'time' ? {time:s.time, text:TIMES[s.time].label}
     : s.type === 'choice' ? {options:s.options.map(o => o.label), text:s.options.map(o => o.label).join(' o ')}
     : Object.assign({text:s.label}, s.picto ? {q:s.picto} : {}, s.people && s.people.length ? {people:s.people} : {},
-        s.cancelled ? {cancelled:true} : {}, s.reason ? {reason:s.reason} : {}, s.place ? {place:s.place} : {}));
+        s.cancelled ? {cancelled:true} : {}, s.reason ? {reason:s.reason} : {}, s.place ? {place:s.place} : {})), said);
 }
 // Sitios reales con nombre (X Madrid, Teatro Luchana…): busca una foto en internet una vez y la guarda para siempre
 async function placePhoto(place){
@@ -972,11 +996,11 @@ async function planText(text){
   if (S.settings.ai !== false && navigator.onLine){
     try{
       const people = [...new Set(Object.values(S.choices).filter(c => c.person).map(c => c.label).concat(Object.values(PEOPLE_BASE)))];
-      const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label).concat(S.profile.vocab || []);
+      const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label);
       const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 15000);
       const r = await fetch('/api/plan', {method:'POST', signal:ctl.signal, headers:{'Content-Type':'application/json'}, body:JSON.stringify({text, people, places})});
       clearTimeout(to);
-      if (r.ok){ const j = await r.json(); const items = aiToItems(j.steps || []); if (items.length) return {items, ai:true}; }
+      if (r.ok){ const j = await r.json(); const items = aiToItems(j.steps || [], text); if (items.length) return {items, ai:true}; }
       else { const t = await r.text().catch(()=>''); LS.set('aiErr', r.status + ' ' + t.slice(0, 160)); }
     }catch(e){ LS.set('aiErr', String(e && e.message || e).slice(0, 160)); }
   }
@@ -1674,7 +1698,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 8.7 (27/11/2026)';
+const APP_VERSION = 'Versión 8.8 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';
@@ -1771,7 +1795,7 @@ function stopVoice(){
         const r = await voiceAI(audio);
         if (r){
           setMic('idle'); $('#txt').value = r.transcript || $('#txt').value;
-          const items = aiToItems(r.steps || []);
+          const items = aiToItems(r.steps || [], r.transcript);
           if (items.length){ addSteps(items, true); fetchPlaces(items); $('#aiErr').textContent = ''; toast('Entendido con IA · ' + (items.length === 1 ? '1 paso' : items.length + ' pasos')); }
           else if (r.transcript) $('#btnCreate').click(); else toast('No te he oído bien. Prueba otra vez.');
           return;
@@ -1804,7 +1828,7 @@ function wav16(f32){
 async function voiceAI(f32){
   try{
     const people = [...new Set(Object.values(S.choices).filter(c => c.person).map(c => c.label).concat(Object.values(PEOPLE_BASE)))];
-    const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label).concat(S.profile.vocab || []);
+    const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label);
     const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 40000);
     const r = await fetch('/api/voice', {method:'POST', signal:ctl.signal, headers:{'Content-Type':'application/json'}, body:JSON.stringify({audio: wav16(f32), people, places})});
     clearTimeout(to);

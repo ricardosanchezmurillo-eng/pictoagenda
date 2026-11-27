@@ -25,7 +25,8 @@ Reglas:
 - Quita el relleno: "ahora", "vas a", "te voy a", "vamos a ir a", "para que", "allí", "luego", "después".
 - Una frase puede dar varios pasos: "te llevo en el coche para que vayas a desayunar allí" → coche, desayunar.
 - Mantén el orden en que se dicen las cosas. No inventes nada que no se haya dicho. Máximo 12 pasos.
-- Si una persona o un lugar coincide con los conocidos, escríbelo exactamente igual.`;
+- Si una persona o un lugar dicho coincide con los conocidos, escríbelo igual. Nunca cambies lo dicho por una palabra conocida más corta.
+- NUNCA añadas personas que no se hayan dicho.`;
 
 const INTRO = `Eres el asistente de una agenda visual con pictogramas para Miranda, una niña de 7 años con autismo que aprende a leer por sílabas.
 La familia vive en Leganés (Madrid).

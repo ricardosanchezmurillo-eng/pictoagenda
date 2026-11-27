@@ -690,6 +690,9 @@ function phraseVariants(label){
   const w = String(label).toLocaleLowerCase('es').split(/\s+/).filter(Boolean);
   const cw = w.filter(x => !STOP.has(stripAccents(x)));
   const v = [w.join(' ')];
+  // "poner el abrigo en la percha" = "colgar el abrigo"
+  const hang = cw.findIndex(x => /^perch/.test(stripAccents(x)));
+  if (hang >= 0){ const g = cw.filter((x, i) => i !== hang && i !== 0)[0] || cw.filter((x, i) => i !== hang)[0]; if (g) v.unshift(`colgar ${ART(g)} ${g}`); }
   if (cw.length === 2){ const vb = stripReflexive(cw[0]), n = cw[1]; v.push(`${vb} ${ART(n)} ${n}`, `${vb}se ${ART(n)} ${n}`); }
   return [...new Set(v)];
 }
@@ -706,7 +709,7 @@ async function smartFind(q){
     }
     if (bs === qw.length) break;
   }
-  return best && bs === qw.length ? best : null;
+  return best && (bs === qw.length || (qw.length >= 3 && bs >= 2)) ? best : null;
 }
 function autoFind(label){
   const key = keyWords(label).join(' ') || label;
@@ -1517,7 +1520,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 6.2 (27/11/2026)';
+const APP_VERSION = 'Versión 7 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';
@@ -1564,13 +1567,13 @@ function loadASR(){
 }
 async function startVoice(){
   if (V.state !== 'idle') return;
-  if (useWhisper() && !LS.get('asrReady', false) && !LS.get('asrAsked', false)){
+  if (useWhisper() && !cloudVoice() && !LS.get('asrReady', false) && !LS.get('asrAsked', false)){
     if (!confirm('Para dictar sin usar el teclado, el móvil descargará una sola vez unos 80 MB (mejor con wifi). Después funciona sin internet. ¿Seguimos?')) return;
     LS.set('asrAsked', true);
   }
   try{
     if (useWhisper()){
-      loadASR();
+      if (!cloudVoice()) loadASR();
       V.stream = await navigator.mediaDevices.getUserMedia({audio:{channelCount:1, echoCancellation:true, noiseSuppression:true}});
       V.chunks = []; V.rec = new MediaRecorder(V.stream);
       V.rec.ondataavailable = e => { if (e.data && e.data.size) V.chunks.push(e.data); };
@@ -1608,6 +1611,23 @@ function stopVoice(){
       const blob = new Blob(V.chunks, {type: V.rec.mimeType || 'audio/webm'});
       const audio = await to16k(blob);
       if (audio.length < 16000*0.4){ setMic('idle'); toast('Muy corto. Mantén pulsado mientras hablas.'); return; }
+      // 1) Con internet: la IA escucha el audio, lo escribe bien y saca los pasos
+      if (cloudVoice()){
+        setMic('busy', 'Escuchando con IA…');
+        const r = await voiceAI(audio);
+        if (r){
+          setMic('idle'); $('#txt').value = r.transcript || $('#txt').value;
+          const items = aiToItems(r.steps || []);
+          if (items.length){ addSteps(items, true); $('#aiErr').textContent = ''; toast('Entendido con IA · ' + (items.length === 1 ? '1 paso' : items.length + ' pasos')); }
+          else if (r.transcript) $('#btnCreate').click(); else toast('No te he oído bien. Prueba otra vez.');
+          return;
+        }
+        if (!LS.get('asrReady', false) && !LS.get('asrAsked', false)){
+          if (!confirm('La IA no responde. Para dictar sin internet, el móvil descargará una vez unos 80 MB. ¿Seguimos?')){ setMic('idle'); return; }
+          LS.set('asrAsked', true);
+        }
+      }
+      // 2) Sin internet: reconocimiento dentro del móvil
       if (!LS.get('asrReady', false)) HINT.textContent = 'Preparando el dictado (solo la primera vez)…';
       const asr = await loadASR();
       setMic('busy', 'Pasando a texto…');
@@ -1616,6 +1636,29 @@ function stopVoice(){
     }catch(err){ console.error(err); setMic('idle'); toast('No he podido pasar el audio a texto. Revisa la conexión la primera vez.'); }
   };
   V.rec.stop();
+}
+function cloudVoice(){ return S.settings.ai !== false && navigator.onLine; }
+function wav16(f32){
+  const n = f32.length, buf = new ArrayBuffer(44 + n*2), v = new DataView(buf);
+  const w = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  w(0,'RIFF'); v.setUint32(4, 36 + n*2, true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true);
+  v.setUint32(24,16000,true); v.setUint32(28,32000,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40, n*2, true);
+  for (let i = 0; i < n; i++){ const s = Math.max(-1, Math.min(1, f32[i])); v.setInt16(44 + i*2, s < 0 ? s*0x8000 : s*0x7FFF, true); }
+  let bin = ''; const u = new Uint8Array(buf); for (let i = 0; i < u.length; i += 0x8000) bin += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+async function voiceAI(f32){
+  try{
+    const people = [...new Set(Object.values(S.choices).filter(c => c.person).map(c => c.label).concat(Object.values(PEOPLE_BASE)))];
+    const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label);
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 40000);
+    const r = await fetch('/api/voice', {method:'POST', signal:ctl.signal, headers:{'Content-Type':'application/json'}, body:JSON.stringify({audio: wav16(f32), people, places})});
+    clearTimeout(to);
+    if (r.ok) return await r.json();
+    LS.set('aiErr', 'voz ' + r.status + ' ' + (await r.text().catch(()=>'')).slice(0, 160));
+  }catch(e){ LS.set('aiErr', 'voz ' + String(e && e.message || e).slice(0, 160)); }
+  $('#aiErr').textContent = 'Motivo sin IA: ' + LS.get('aiErr', '');
+  return null;
 }
 function finishSR(){ V.engine = null; useText(V.srText || $('#txt').value); }
 const HALLU = /subt[ií]tulos?[^\n]*?(amara\.org|$)|amara\.org|gracias por ver( el v[ií]deo)?|suscr[ií]bete[^.]*/gi;

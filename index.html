@@ -891,7 +891,7 @@ async function planText(text){
   if (S.settings.ai !== false && navigator.onLine){
     try{
       const people = [...new Set(Object.values(S.choices).filter(c => c.person).map(c => c.label).concat(Object.values(PEOPLE_BASE)))];
-      const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label);
+      const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label).concat(S.profile.vocab || []);
       const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 15000);
       const r = await fetch('/api/plan', {method:'POST', signal:ctl.signal, headers:{'Content-Type':'application/json'}, body:JSON.stringify({text, people, places})});
       clearTimeout(to);
@@ -1140,6 +1140,7 @@ $('#importFile').onchange = async e => {
     const names = new Set(S.routines.map(r=>r.name));
     (d.routines||[]).forEach(r => { if (!names.has(r.name)) S.routines.push(r); });
     if (d.profile && d.profile.notes) S.profile.notes = d.profile.replaceDefaults ? d.profile.notes.slice() : union(S.profile.notes, d.profile.notes);
+    if (d.profile && d.profile.vocab) S.profile.vocab = union(S.profile.vocab, d.profile.vocab);
     save('choices','routines','profile'); renderAll(); toast('Importado');
   }catch(err){ toast('Ese archivo no es de PictoAgenda'); }
 };
@@ -1520,7 +1521,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 7 (27/11/2026)';
+const APP_VERSION = 'Versión 7.1 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';
@@ -1650,7 +1651,7 @@ function wav16(f32){
 async function voiceAI(f32){
   try{
     const people = [...new Set(Object.values(S.choices).filter(c => c.person).map(c => c.label).concat(Object.values(PEOPLE_BASE)))];
-    const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label);
+    const places = Object.values(S.choices).filter(c => !c.person && !c.time).map(c => c.label).concat(S.profile.vocab || []);
     const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 40000);
     const r = await fetch('/api/voice', {method:'POST', signal:ctl.signal, headers:{'Content-Type':'application/json'}, body:JSON.stringify({audio: wav16(f32), people, places})});
     clearTimeout(to);

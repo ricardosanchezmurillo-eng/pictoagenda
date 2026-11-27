@@ -45,14 +45,14 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'POST') return res.status(405).send('Usa POST');
   const token = process.env.AI_GATEWAY_API_KEY || req.headers['x-vercel-oidc-token'] || process.env.VERCEL_OIDC_TOKEN;
-  if (!token) return res.status(503).send('IA no configurada');
+  if (!token) return res.status(503).send('no hay token OIDC en la función');
   const b = req.body || {};
   const text = str(b.text, 1500);
   if (!text) return res.status(400).send('Sin texto');
   const people = (Array.isArray(b.people) ? b.people : []).map(p => str(p, 30)).filter(Boolean).slice(0, 40);
   const places = (Array.isArray(b.places) ? b.places : []).map(p => str(p, 40)).filter(Boolean).slice(0, 80);
   const user = `Personas conocidas: ${people.join(', ') || '(ninguna)'}\nLugares y cosas conocidas: ${places.join(', ') || '(ninguno)'}\n\nDictado: """${text}"""`;
-  const models = (process.env.PA_AI_MODELS || 'anthropic/claude-haiku-5.5,anthropic/claude-haiku-4.5,google/gemini-2.5-flash').split(',').map(m => m.trim()).filter(Boolean);
+  const models = (process.env.PA_AI_MODELS || 'google/gemini-2.5-flash-lite,google/gemini-2.5-flash,anthropic/claude-haiku-5.5,anthropic/claude-haiku-4.5').split(',').map(m => m.trim()).filter(Boolean);
   let last = '';
   for (const model of models){
     try {

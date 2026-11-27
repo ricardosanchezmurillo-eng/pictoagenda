@@ -277,6 +277,7 @@ label.f{display:block;font-weight:700;margin:14px 0 5px;font-size:.92rem}
     <button id="btnNew">Empezar de nuevo</button>
   </div>
   <p class="hint" id="micHint"></p>
+  <p class="hint" id="aiErr" style="color:var(--coral)"></p>
 </section>
 
 <h2>Agenda</h2>
@@ -867,7 +868,8 @@ async function planText(text){
       const r = await fetch('/api/plan', {method:'POST', signal:ctl.signal, headers:{'Content-Type':'application/json'}, body:JSON.stringify({text, people, places})});
       clearTimeout(to);
       if (r.ok){ const j = await r.json(); const items = aiToItems(j.steps || []); if (items.length) return {items, ai:true}; }
-    }catch(e){}
+      else { const t = await r.text().catch(()=>''); LS.set('aiErr', r.status + ' ' + t.slice(0, 160)); }
+    }catch(e){ LS.set('aiErr', String(e && e.message || e).slice(0, 160)); }
   }
   return {items: parsePlan(text), ai:false};
 }
@@ -879,6 +881,7 @@ async function createFrom(text, replace){
     if (!items.length){ toast('No he encontrado pasos'); return; }
     addSteps(items, replace);
     toast((ai ? 'Entendido con IA · ' : 'Hecho sin IA · ') + (items.length === 1 ? '1 paso' : items.length + ' pasos'));
+    $('#aiErr').textContent = ai ? '' : (LS.get('aiErr', '') ? 'Motivo sin IA: ' + LS.get('aiErr', '') : '');
     if (!replace) $('#txt').value = '';
   } finally { b.disabled = false; b.textContent = old; }
 }
@@ -1489,7 +1492,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 6 (27/11/2026)';
+const APP_VERSION = 'Versión 6.1 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';

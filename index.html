@@ -26,6 +26,12 @@
 [hidden]{display:none!important}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--paper);color:var(--ink);font:17px/1.45 var(--ui)}
+/* Como una app: sin selección de texto ni menú de copiar al mantener pulsado (iPhone), y toques sin retraso */
+html{-webkit-text-size-adjust:100%;touch-action:manipulation}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+img{-webkit-user-drag:none;-webkit-touch-callout:none}
+button,a,.tile,.step,.mini,.kword{touch-action:manipulation}
 body{padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 104px);max-width:720px;margin:0 auto}
 :focus-visible{outline:3px solid var(--sun);outline-offset:2px}
 button{font:inherit;font-weight:700;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:11px 15px;cursor:pointer}
@@ -177,7 +183,8 @@ button.wide{width:100%;margin-top:10px}
 .mini.cancel::after{content:"";position:absolute;inset:4px;background:linear-gradient(45deg,transparent 45%,var(--coral) 45%,var(--coral) 55%,transparent 55%)}
 .mini.t{background:var(--sun-2)}
 .round{width:46px;height:46px;border-radius:50%;padding:0;display:grid;place-items:center;flex:none;font-size:1.25rem}
-#kLock.hold{background:var(--sun)}
+#kLock{touch-action:none}
+#kLock.hold{background:var(--sun);transform:scale(1.25);transition:transform 1.5s linear}
 #kMain{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;min-height:0;border-radius:32px;padding:8px}
 #kMain.t{background:var(--sun-2)}
 .kcard{position:relative;display:inline-block;max-width:100%}
@@ -1511,10 +1518,14 @@ function startTimer(st){
   const b = $('#kLock'); let t = null;
   const start = e => { e.preventDefault(); b.classList.add('hold'); t = setTimeout(() => { b.classList.remove('hold'); closeKid(); }, 1500); };
   const stop = () => { b.classList.remove('hold'); if (t){ clearTimeout(t); t = null; } };
-  b.addEventListener('pointerdown', start); ['pointerup','pointerleave','pointercancel'].forEach(ev => b.addEventListener(ev, stop));
-  b.addEventListener('contextmenu', e => e.preventDefault());
+  b.addEventListener('pointerdown', start); ['pointerup','pointercancel'].forEach(ev => b.addEventListener(ev, stop));
+  // iPhone: sin esto, mantener pulsado selecciona texto o abre el menú de copiar
+  b.addEventListener('touchstart', e => e.preventDefault(), {passive:false});
+  b.addEventListener('touchend', stop); b.addEventListener('contextmenu', e => e.preventDefault());
 })();
 $('#btnKid').onclick = openKid;
+$('#kid').addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('selectstart', e => { if (!e.target.closest || !e.target.closest('input,textarea,[contenteditable]')) e.preventDefault(); });
 
 /* ---------- Tableros: esperar y cómo me siento ---------- */
 let B = {tick:null, standalone:false};
@@ -1645,7 +1656,7 @@ resolveText('esperar').then(r => setImg($('#icoWait'), r));
 $('#icoFeel').src = girlFace('contenta');
 
 /* ---------- Arranque ---------- */
-const APP_VERSION = 'Versión 8.4 (27/11/2026)';
+const APP_VERSION = 'Versión 8.5 (27/11/2026)';
 function renderToday(){
   const d = new Date(); const s = d.toLocaleDateString('es-ES', {weekday:'long', day:'numeric', month:'long'});
   $('#today').innerHTML = esc(s.charAt(0).toUpperCase() + s.slice(1)) + '<small>Agenda de Miranda</small>';
